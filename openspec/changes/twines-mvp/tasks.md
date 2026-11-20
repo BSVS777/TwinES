@@ -69,10 +69,10 @@ Conventions for every work unit:
 - [x] 3.2 Create `twines/src/application/ports.ts` and `twines/src/application/errors.ts`
 - [x] 3.3 RED: `twines/tests/integration/repositories.test.ts` — unique email/plate raise `Conflict`, `findByIdForOwner` misses other owners, cascade delete of baselines, session lookup by token hash
 - [x] 3.4 GREEN: `twines/src/infrastructure/db.ts` and `twines/src/infrastructure/repositories/{user,session,login-throttle,vehicle}-repository.ts`
-- [ ] 3.5 RED: `twines/tests/unit/application/auth/sign-up.test.ts` — lowercase email, duplicate (AUTH-02), weak password (AUTH-03), invalid email (AUTH-04), hashed password (AUTH-05), role forced to owner (AUTH-06)
-- [ ] 3.6 GREEN: `twines/src/application/validation/auth.ts`, `twines/src/application/auth/sign-up.ts`, `twines/src/infrastructure/auth/bcrypt-hasher.ts`
-- [ ] 3.7 RED: `twines/tests/unit/application/auth/sign-in.test.ts` — success (AUTH-07), identical message for wrong password and unknown email (AUTH-08), lockout after 5 failures including unknown emails (AUTH-10), expiry and counter reset (AUTH-11), sign-out deletes session (AUTH-12)
-- [ ] 3.8 GREEN: `twines/src/application/auth/{sign-in,sign-out,get-current-user}.ts`, `twines/src/infrastructure/auth/{session-cookie,clock}.ts` (Clock honors `TWINES_FIXED_TODAY` only outside production)
+- [x] 3.5 RED: `twines/tests/unit/application/auth/sign-up.test.ts` — lowercase email, duplicate (AUTH-02), weak password (AUTH-03), invalid email (AUTH-04), hashed password (AUTH-05), role forced to owner (AUTH-06)
+- [x] 3.6 GREEN: `twines/src/application/validation/auth.ts`, `twines/src/application/auth/sign-up.ts`, `twines/src/infrastructure/auth/bcrypt-hasher.ts`
+- [x] 3.7 RED: `twines/tests/unit/application/auth/sign-in.test.ts` — success (AUTH-07), identical message for wrong password and unknown email (AUTH-08), lockout after 5 failures including unknown emails (AUTH-10), expiry and counter reset (AUTH-11), sign-out deletes session (AUTH-12)
+- [x] 3.8 GREEN: `twines/src/application/auth/{sign-in,sign-out,get-current-user}.ts`, `twines/src/infrastructure/auth/{session-token,clock}.ts` (cookie helpers are added with the HTTP routes; Clock honors `TWINES_FIXED_TODAY` only outside production)
 - [ ] 3.9 RED: `twines/tests/unit/infrastructure/http/handle.test.ts` — error → status mapping (400/401/403/404/409/429) and Origin check rejects missing or foreign origins
 - [ ] 3.10 GREEN: `twines/src/infrastructure/http/{handle,origin-check}.ts`
 - [ ] 3.11 Create `twines/src/app/api/auth/{sign-up,sign-in,sign-out}/route.ts` with httpOnly SameSite=Lax cookie (AUTH-09)
