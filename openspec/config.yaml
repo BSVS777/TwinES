@@ -29,10 +29,10 @@ rules:
     guidelines:
       - Follow existing code patterns
     tdd: true
-    test_command: ""   # set during design/apply once the project is scaffolded
+    test_command: "npm --prefix twines test"
   verify:
-    test_command: ""
-    build_command: ""
+    test_command: "npm --prefix twines test"
+    build_command: "npm --prefix twines run build"
     coverage_threshold: 80
   archive:
     - Warn before merging destructive deltas

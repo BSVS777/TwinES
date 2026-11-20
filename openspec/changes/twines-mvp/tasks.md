@@ -42,12 +42,12 @@ Conventions for every work unit:
 
 ## Phase 1: Foundation (PR 1)
 
-- [ ] 1.1 Create `twines/` with Next.js 16 (App Router, TypeScript strict, ESLint, `src/` dir); pin exact dependency versions in `twines/package.json`
-- [ ] 1.2 Add `twines/vitest.config.ts` (node + jsdom projects, v8 coverage, thresholds 80% for `src/domain` and `src/application`) and a sample test proving the runner works
-- [ ] 1.3 Add `twines/playwright.config.ts` (Chromium, `webServer` running `next start`) without tests yet
-- [ ] 1.4 Add scripts `test`, `test:coverage`, `test:e2e`, `db:migrate`, `db:seed`, `lint`, `build` to `twines/package.json`
-- [ ] 1.5 Create `.gitattributes` (LF normalization) and `twines/.env.example` (`DATABASE_URL`, `SEED_TECH_PASSWORD`, `TWINES_FIXED_TODAY`)
-- [ ] 1.6 Update `openspec/config.yaml` `apply.test_command` and `verify.test_command`/`build_command` with the real commands
+- [x] 1.1 Create `twines/` with Next.js 16 (App Router, TypeScript strict, ESLint, `src/` dir); pin exact dependency versions in `twines/package.json`
+- [x] 1.2 Add `twines/vitest.config.ts` (node + jsdom projects, v8 coverage, thresholds 80% for `src/domain` and `src/application`) and a sample test proving the runner works
+- [x] 1.3 Add `twines/playwright.config.ts` (Chromium, `webServer` running `next start`) without tests yet
+- [x] 1.4 Add scripts `test`, `test:coverage`, `test:e2e`, `db:migrate`, `db:seed`, `lint`, `build` to `twines/package.json`
+- [x] 1.5 Create `.gitattributes` (LF normalization) and `twines/.env.example` (`DATABASE_URL`, `SEED_TECH_PASSWORD`, `TWINES_FIXED_TODAY`)
+- [x] 1.6 Update `openspec/config.yaml` `apply.test_command` and `verify.test_command`/`build_command` with the real commands
 
 ## Phase 2: Domain rules (PR 2, PR 3)
 
