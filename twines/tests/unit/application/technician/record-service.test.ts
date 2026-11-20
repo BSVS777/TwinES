@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Forbidden, NotFound, ValidationError } from "@/application/errors";
 import type { Vehicle } from "@/application/ports";
 import { recordService, type RecordServiceDeps } from "@/application/technician/record-service";
@@ -118,6 +118,54 @@ describe("recordService", () => {
         );
       }
       expect(stored().currentMileageKm).toBe(45000);
+    });
+  });
+
+  describe("a concurrent raise between the read and the write", () => {
+    /** Lets the use case read the vehicle, then raises the stored mileage before it writes. */
+    function raiseAfterRead(toKm: number) {
+      const read = vehicles.findById.bind(vehicles);
+      vi.spyOn(vehicles, "findById").mockImplementationOnce(async (id) => {
+        const seen = await read(id);
+        vehicles.vehicles[0].currentMileageKm = toKm;
+        return seen;
+      });
+    }
+
+    it("VEH-09 rejects the stale reading with the rollback message and writes no baseline", async () => {
+      raiseAfterRead(46000);
+
+      const error = await recordService(deps, TECHNICIAN, vehicle.id, { partId: "engine-oil", currentMileageKm: 45200 }).catch(
+        (e) => e,
+      );
+
+      expect(error).toBeInstanceOf(ValidationError);
+      expect(error.errors).toEqual({ currentMileageKm: "Mileage cannot be lower than the current value" });
+      expect(stored().currentMileageKm).toBe(46000);
+      expect(baselineOf("engine-oil")).toMatchObject({ mileageKm: 0 });
+    });
+
+    it("takes the baseline mileage from the vehicle as it is when written, not as it was read", async () => {
+      raiseAfterRead(46000);
+
+      await recordService(deps, TECHNICIAN, vehicle.id, { partId: "engine-oil" });
+
+      expect(stored().currentMileageKm).toBe(46000);
+      expect(baselineOf("engine-oil")).toEqual({ partId: "engine-oil", mileageKm: 46000, date: "2026-03-10" });
+    });
+
+    it("answers NotFound when the vehicle is deleted between the read and the write", async () => {
+      const read = vehicles.findById.bind(vehicles);
+      vi.spyOn(vehicles, "findById").mockImplementationOnce(async (id) => {
+        const seen = await read(id);
+        vehicles.vehicles.length = 0;
+        return seen;
+      });
+
+      const error = await recordService(deps, TECHNICIAN, vehicle.id, { partId: "engine-oil" }).catch((e) => e);
+
+      expect(error).toBeInstanceOf(NotFound);
+      expect(error.message).toBe("Vehicle not found");
     });
   });
 

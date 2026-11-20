@@ -1,4 +1,4 @@
-import { Conflict } from "@/application/errors";
+import { Conflict, NotFound, ValidationError } from "@/application/errors";
 import type {
   NewVehicle,
   PublicUser,
@@ -8,6 +8,7 @@ import type {
   VehicleRepository,
 } from "@/application/ports";
 import type { PartBaseline } from "@/domain/part-health/health-estimator";
+import { MILEAGE_ROLLBACK_MESSAGE } from "@/application/validation/vehicle";
 
 export { FakeClock } from "../auth/fakes";
 
@@ -64,7 +65,10 @@ export class InMemoryVehicleRepository implements VehicleRepository {
 
   async update(id: string, changes: VehicleChanges): Promise<Vehicle> {
     const vehicle = this.vehicles.find((candidate) => candidate.id === id);
-    if (!vehicle) throw new Error(`No vehicle ${id}`);
+    if (!vehicle) throw new NotFound("Vehicle not found");
+    if (changes.currentMileageKm !== undefined && changes.currentMileageKm < vehicle.currentMileageKm) {
+      throw new ValidationError({ currentMileageKm: MILEAGE_ROLLBACK_MESSAGE });
+    }
     if (changes.plate !== undefined && changes.plate !== vehicle.plate) this.assertPlateFree(changes.plate);
     Object.assign(vehicle, changes);
     return { ...vehicle };
@@ -83,11 +87,16 @@ export class InMemoryVehicleRepository implements VehicleRepository {
     else vehicle.baselines.push({ ...baseline });
   }
 
-  async recordService(vehicleId: string, { baseline, currentMileageKm }: ServiceRecord): Promise<Vehicle> {
+  async recordService(vehicleId: string, { partId, date, currentMileageKm }: ServiceRecord): Promise<Vehicle> {
     const vehicle = this.vehicles.find((candidate) => candidate.id === vehicleId);
-    if (!vehicle) throw new Error(`No vehicle ${vehicleId}`);
+    if (!vehicle) throw new NotFound("Vehicle not found");
+    // Like the database write, the odometer only ever moves up and the baseline mileage comes from
+    // the row as it is now, not from what the caller read earlier.
+    if (currentMileageKm !== undefined && currentMileageKm < vehicle.currentMileageKm) {
+      throw new ValidationError({ currentMileageKm: MILEAGE_ROLLBACK_MESSAGE });
+    }
     if (currentMileageKm !== undefined) vehicle.currentMileageKm = currentMileageKm;
-    await this.upsertBaseline(vehicleId, baseline);
+    await this.upsertBaseline(vehicleId, { partId, mileageKm: vehicle.currentMileageKm, date });
     return { ...vehicle };
   }
 

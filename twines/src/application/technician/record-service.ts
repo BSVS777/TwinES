@@ -29,7 +29,8 @@ export async function recordService(
     throw new ValidationError({ currentMileageKm: MILEAGE_ROLLBACK_MESSAGE });
   }
 
-  const baseline = { partId, mileageKm: currentMileageKm ?? vehicle.currentMileageKm, date: clock.today() };
-  await vehicles.recordService(vehicle.id, { baseline, currentMileageKm });
+  // The early check above only gives a quick answer; the write repeats it atomically, and takes the
+  // baseline mileage from the vehicle as it is then, so a concurrent change is never overwritten.
+  await vehicles.recordService(vehicle.id, { partId, date: clock.today(), currentMileageKm });
   return getVehicleHealth(deps, actor, vehicle.id);
 }

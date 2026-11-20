@@ -49,17 +49,22 @@ function pastOrTodayDate(label: string, today: CalendarDate) {
     .transform((value) => value as CalendarDate);
 }
 
+/** A plate as stored: trimmed, uppercase, 1 to 8 letters, digits or hyphens. Registration and plate search share it. */
+function plateField() {
+  return z
+    .string(required("Plate is required"))
+    .trim()
+    .toUpperCase()
+    .min(1, "Plate is required")
+    .max(PLATE_MAX, `Plate must be at most ${PLATE_MAX} characters`)
+    .regex(/^[A-Z0-9-]+$/, "Plate can only have letters, digits and hyphens");
+}
+
 /** Registration fields without the monthly-mileage default, shared by registration and edits. */
 function vehicleFields(today: CalendarDate) {
   const latestYear = Number(today.slice(0, 4)) + 1;
   return {
-    plate: z
-      .string(required("Plate is required"))
-      .trim()
-      .toUpperCase()
-      .min(1, "Plate is required")
-      .max(PLATE_MAX, `Plate must be at most ${PLATE_MAX} characters`)
-      .regex(/^[A-Z0-9-]+$/, "Plate can only have letters, digits and hyphens"),
+    plate: plateField(),
     make: text("Make", NAME_MAX),
     model: text("Model", NAME_MAX),
     year: z
@@ -129,9 +134,13 @@ export function serviceSchema() {
   );
 }
 
-/** A plate typed into the technician search, normalized the way plates are stored (VEH-14). */
+/**
+ * A plate typed into the technician search (VEH-14): normalized the way plates are stored and held
+ * to the same length and character rules as registration, so an input no registration could hold
+ * is refused before it reaches the lookup.
+ */
 export function plateSearchSchema() {
-  return z.string(required("Plate is required")).trim().toUpperCase().min(1, "Plate is required");
+  return plateField();
 }
 
 export type VehicleInput = z.infer<ReturnType<typeof vehicleSchema>>;

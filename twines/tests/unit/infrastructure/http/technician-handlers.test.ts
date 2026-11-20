@@ -150,6 +150,16 @@ describe("technician route handlers", () => {
       expect(await response.json()).toEqual({ error: "No vehicle found for this plate" });
     });
 
+    it("answers 400 for a plate no registration could hold", async () => {
+      const tooLong = await search("ABCDEFGHI");
+      const badCharacters = await search("ABC 12%");
+
+      expect(tooLong.status).toBe(400);
+      expect(await tooLong.json()).toEqual({ errors: { form: "Plate must be at most 8 characters" } });
+      expect(badCharacters.status).toBe(400);
+      expect(await badCharacters.json()).toEqual({ errors: { form: "Plate can only have letters, digits and hyphens" } });
+    });
+
     it("answers 400 when the plate is missing or blank", async () => {
       const missing = await handlers.findByPlate(request("GET", "/api/technician/vehicles"));
       const blank = await search("   ");
@@ -207,6 +217,47 @@ describe("technician route handlers", () => {
 
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({ errors: { partId: "Part must be one of the 8 tracked parts" } });
+    });
+
+    it("ignores extra body keys: the owner, plate and details of the vehicle cannot be changed through a service", async () => {
+      const response = await service({
+        partId: "engine-oil",
+        currentMileageKm: 45200,
+        ownerId: technician.id,
+        plate: "HACK-1",
+        make: "Honda",
+        id: "other-vehicle",
+        baselines: [],
+      });
+
+      expect(response.status).toBe(200);
+      expect(vehicles.vehicles).toHaveLength(1);
+      expect(vehicles.vehicles[0]).toMatchObject({
+        id: vehicleId,
+        ownerId: owner.id,
+        plate: "ABC-123",
+        make: "Toyota",
+        currentMileageKm: 45200,
+      });
+      expect(vehicles.vehicles[0].baselines).toHaveLength(8);
+    });
+
+    it.each([-1, -45000])("answers 400 for a negative mileage (%d) and changes nothing", async (currentMileageKm) => {
+      const response = await service({ partId: "engine-oil", currentMileageKm });
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ errors: { currentMileageKm: "Mileage cannot be negative" } });
+      expect(vehicles.vehicles[0].currentMileageKm).toBe(45000);
+    });
+
+    it.each(["1e999", "-1e999"])("answers 400 for a mileage that overflows to infinity (%s) and changes nothing", async (literal) => {
+      // JSON has no Infinity, but an exponent beyond the double range parses to one.
+      const response = await service(`{"partId":"engine-oil","currentMileageKm":${literal}}`);
+
+      expect(response.status).toBe(400);
+      expect(Object.keys((await response.json()).errors)).toEqual(["currentMileageKm"]);
+      expect(vehicles.vehicles[0].currentMileageKm).toBe(45000);
+      expect(vehicles.vehicles[0].baselines.every((baseline) => baseline.mileageKm === 0)).toBe(true);
     });
 
     it("answers 400 for a body that is not JSON", async () => {

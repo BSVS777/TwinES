@@ -67,6 +67,41 @@ describe("updateVehicle", () => {
     });
   });
 
+  describe("VEH-09 a concurrent raise between the read and the write", () => {
+    /** Lets the use case read the vehicle, then raises the stored mileage before it writes. */
+    function raiseAfterRead(toKm: number) {
+      const read = vehicles.findByIdForOwner.bind(vehicles);
+      vi.spyOn(vehicles, "findByIdForOwner").mockImplementationOnce(async (id, ownerId) => {
+        const seen = await read(id, ownerId);
+        vehicles.vehicles[0].currentMileageKm = toKm;
+        return seen;
+      });
+    }
+
+    it("still rejects the stale write with the rollback message and never lowers the mileage", async () => {
+      raiseAfterRead(46000);
+
+      const error = await updateVehicle(deps, OWNER_A, vehicle.id, { currentMileageKm: 45200, make: "Honda" }).catch(
+        (e) => e,
+      );
+
+      expect(error).toBeInstanceOf(ValidationError);
+      expect(error.errors).toEqual({ currentMileageKm: "Mileage cannot be lower than the current value" });
+      expect(vehicles.vehicles[0]).toMatchObject({ currentMileageKm: 46000, make: "Toyota" });
+    });
+
+    it("answers NotFound when the vehicle is deleted between the read and the write", async () => {
+      const read = vehicles.findByIdForOwner.bind(vehicles);
+      vi.spyOn(vehicles, "findByIdForOwner").mockImplementationOnce(async (id, ownerId) => {
+        const seen = await read(id, ownerId);
+        vehicles.vehicles.length = 0;
+        return seen;
+      });
+
+      await expect(updateVehicle(deps, OWNER_A, vehicle.id, { make: "Honda" })).rejects.toBeInstanceOf(NotFound);
+    });
+  });
+
   describe("VEH-02 plate uniqueness on edit", () => {
     beforeEach(async () => {
       await registerVehicle(deps, OWNER_B, { ...REGISTRATION, plate: "TAKEN-1" });

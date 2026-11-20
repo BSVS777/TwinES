@@ -394,15 +394,14 @@ describe("vehicle route handlers", () => {
       expect(response.status).toBe(404);
     });
 
-    it("VEH-17 answers 403 for a technician", async () => {
+    it.each(["PUT", "POST"])("VEH-17 answers 403 to a technician sending %s and leaves the baselines alone", async (method) => {
       const { id } = await seedVehicle(owner);
+      const before = structuredClone(vehicles.vehicles[0].baselines);
 
-      const response = await handlers.setBaseline(
-        request("PUT", `/api/vehicles/${id}/baselines`, { as: technician, body: baseline }),
-        id,
-      );
+      const response = await handlers.setBaseline(request(method, `/api/vehicles/${id}/baselines`, { as: technician, body: baseline }), id);
 
       expect(response.status).toBe(403);
+      expect(vehicles.vehicles[0].baselines).toEqual(before);
     });
   });
 });

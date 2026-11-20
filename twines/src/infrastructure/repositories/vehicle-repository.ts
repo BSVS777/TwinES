@@ -1,4 +1,4 @@
-import { Conflict } from "@/application/errors";
+import { Conflict, NotFound, ValidationError } from "@/application/errors";
 import type {
   BodyType,
   NewVehicle,
@@ -7,11 +7,12 @@ import type {
   VehicleChanges,
   VehicleRepository,
 } from "@/application/ports";
+import { MILEAGE_ROLLBACK_MESSAGE } from "@/application/validation/vehicle";
 import type { PartId } from "@/domain/part-health/catalog";
 import type { PartBaseline } from "@/domain/part-health/health-estimator";
 import type { CalendarDate } from "@/domain/shared/calendar-date";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { uniqueViolationFields } from "./prisma-errors";
+import { isRecordNotFound, uniqueViolationFields } from "./prisma-errors";
 
 interface BaselineRow {
   partId: string;
@@ -59,6 +60,10 @@ function rethrowDuplicatePlate(error: unknown): never {
   throw error;
 }
 
+function mileageRollback(): ValidationError {
+  return new ValidationError({ currentMileageKm: MILEAGE_ROLLBACK_MESSAGE });
+}
+
 export class PrismaVehicleRepository implements VehicleRepository {
   constructor(private readonly db: PrismaClient) {}
 
@@ -100,10 +105,19 @@ export class PrismaVehicleRepository implements VehicleRepository {
   }
 
   async update(id: string, changes: VehicleChanges): Promise<Vehicle> {
+    const { currentMileageKm } = changes;
+    // The odometer check is part of the UPDATE itself, so a value read earlier can never be
+    // written over a higher one that landed in between.
+    const where = currentMileageKm === undefined ? { id } : { id, currentMileageKm: { lte: currentMileageKm } };
     try {
-      const row = await this.db.vehicle.update({ where: { id }, data: changes, include: withBaselines });
+      const row = await this.db.vehicle.update({ where, data: changes, include: withBaselines });
       return toVehicle(row);
     } catch (error) {
+      if (isRecordNotFound(error)) {
+        // Either the vehicle is gone or its mileage is already above the new value.
+        const exists = currentMileageKm !== undefined && (await this.db.vehicle.count({ where: { id } })) > 0;
+        throw exists ? mileageRollback() : new NotFound("Vehicle not found");
+      }
       return rethrowDuplicatePlate(error);
     }
   }
@@ -122,18 +136,29 @@ export class PrismaVehicleRepository implements VehicleRepository {
     });
   }
 
-  async recordService(vehicleId: string, { baseline, currentMileageKm }: ServiceRecord): Promise<Vehicle> {
-    const { partId, mileageKm, date } = baseline;
-    // One transaction: a failed baseline write must not leave the new mileage behind. An omitted
-    // mileage leaves the column as it is.
-    await this.db.$transaction([
-      this.db.vehicle.update({ where: { id: vehicleId }, data: { currentMileageKm } }),
-      this.db.partBaseline.upsert({
+  async recordService(vehicleId: string, { partId, date, currentMileageKm }: ServiceRecord): Promise<Vehicle> {
+    // One transaction: a failed baseline write must not leave the new mileage behind. The vehicle
+    // is read inside it, so an omitted reading uses the mileage as it is now, and the mileage write
+    // only matches while the stored value is not above the new one.
+    await this.db.$transaction(async (tx) => {
+      const current = await tx.vehicle.findUnique({ where: { id: vehicleId }, select: { currentMileageKm: true } });
+      if (!current) throw new NotFound("Vehicle not found");
+
+      if (currentMileageKm !== undefined) {
+        const { count } = await tx.vehicle.updateMany({
+          where: { id: vehicleId, currentMileageKm: { lte: currentMileageKm } },
+          data: { currentMileageKm },
+        });
+        if (count === 0) throw mileageRollback();
+      }
+
+      const mileageKm = currentMileageKm ?? current.currentMileageKm;
+      await tx.partBaseline.upsert({
         where: { vehicleId_partId: { vehicleId, partId } },
         create: { vehicleId, partId, mileageKm, date },
         update: { mileageKm, date },
-      }),
-    ]);
+      });
+    });
     return toVehicle(await this.db.vehicle.findUniqueOrThrow({ where: { id: vehicleId }, include: withBaselines }));
   }
 }

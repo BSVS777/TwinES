@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ZodType } from "zod";
 import { ValidationError } from "@/application/errors";
 import { parseInput } from "@/application/validation/parse";
-import { baselineSchema, vehicleSchema, vehicleUpdateSchema } from "@/application/validation/vehicle";
+import { baselineSchema, plateSearchSchema, vehicleSchema, vehicleUpdateSchema } from "@/application/validation/vehicle";
 import { parseCalendarDate } from "@/domain/shared/calendar-date";
 
 const TODAY = parseCalendarDate("2026-03-10");
@@ -334,5 +334,43 @@ describe("baselineSchema", () => {
 
   it("drops unknown keys such as vehicleId", () => {
     expect(parseInput(baseline, { ...VALID_BASELINE, vehicleId: "other" })).not.toHaveProperty("vehicleId");
+  });
+});
+
+describe("plateSearchSchema", () => {
+  const search = plateSearchSchema();
+
+  it.each([
+    ["abc-123", "ABC-123"],
+    ["  abc-123  ", "ABC-123"],
+    ["a", "A"],
+    ["abcdefgh", "ABCDEFGH"],
+    ["  ABCDEFGH  ", "ABCDEFGH"],
+  ])("VEH-14 normalizes %j to %j", (typed, normalized) => {
+    expect(parseInput(search, typed)).toBe(normalized);
+  });
+
+  it("VEH-03 applies the registration length limit after normalization", () => {
+    expect(errorsFor(search, "ABCDEFGHI")).toEqual({ form: "Plate must be at most 8 characters" });
+    expect(errorsFor(search, "  abcdefghi  ")).toEqual({ form: "Plate must be at most 8 characters" });
+    expect(errorsFor(search, "x".repeat(5000))).toEqual({ form: "Plate must be at most 8 characters" });
+  });
+
+  it.each(["AB C", "AB_1", "AB.1", "ABC%", "A*B", "ABC;--", "<b>", "ÁBC-1"])(
+    "VEH-03 applies the registration character rule to %j",
+    (typed) => {
+      expect(errorsFor(search, typed)).toEqual({ form: "Plate can only have letters, digits and hyphens" });
+    },
+  );
+
+  it.each(["", "   ", undefined, null, 123])("still asks for a plate when the input is %j", (typed) => {
+    expect(errorsFor(search, typed)).toEqual({ form: "Plate is required" });
+  });
+
+  it("accepts exactly what registration accepts, so a registered plate is always searchable", () => {
+    for (const plate of ["a", "ABC-123", "1-2-3-4-", "abcdefgh"]) {
+      expect(errorsFor(register, { ...VALID, plate })).toBeNull();
+      expect(errorsFor(search, plate)).toBeNull();
+    }
   });
 });

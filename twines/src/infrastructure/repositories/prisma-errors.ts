@@ -13,3 +13,8 @@ export function uniqueViolationFields(error: unknown): string[] | null {
     | undefined;
   return meta?.driverAdapterError?.cause?.constraint?.fields ?? [];
 }
+
+/** True when an update or delete matched no row (Prisma's P2025). */
+export function isRecordNotFound(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025";
+}

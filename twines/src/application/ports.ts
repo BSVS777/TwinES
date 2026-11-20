@@ -1,4 +1,5 @@
 import type { CalendarDate } from "@/domain/shared/calendar-date";
+import type { PartId } from "@/domain/part-health/catalog";
 import type { PartBaseline } from "@/domain/part-health/health-estimator";
 
 export type Role = "owner" | "technician";
@@ -120,8 +121,13 @@ export type VehicleChanges = Partial<Omit<NewVehicle, "ownerId" | "baselines">>;
 
 /** What a technician's service visit changes: one part's baseline and, optionally, the odometer. */
 export interface ServiceRecord {
-  baseline: PartBaseline;
-  /** The new odometer reading; omitted when the reading stays as it is. */
+  partId: PartId;
+  /** The baseline date: the day of the visit. */
+  date: CalendarDate;
+  /**
+   * The new odometer reading; omitted when the reading stays as it is. The baseline's mileage is
+   * this reading, or the vehicle's current mileage as read by the write itself when omitted.
+   */
   currentMileageKm?: number;
 }
 
@@ -134,14 +140,20 @@ export interface VehicleRepository {
   /** Exact match on the stored (uppercase) plate. */
   findByPlate(plate: string): Promise<Vehicle | null>;
   listByOwner(ownerId: string): Promise<Vehicle[]>;
-  /** Throws `Conflict` when the new plate is taken. */
+  /**
+   * Throws `Conflict` when the new plate is taken, `NotFound` when the vehicle is gone, and
+   * `ValidationError` (rollback message) when `currentMileageKm` is below the stored value: the
+   * odometer check is part of the write, so a concurrent raise can never be undone.
+   */
   update(id: string, changes: VehicleChanges): Promise<Vehicle>;
   /** Removes the vehicle and its baselines. */
   delete(id: string): Promise<void>;
   upsertBaseline(vehicleId: string, baseline: PartBaseline): Promise<void>;
   /**
    * Applies a service visit as one unit: the new mileage, when given, and the part's baseline are
-   * both saved or neither is. Returns the vehicle as saved.
+   * both saved or neither is. Throws `NotFound` when the vehicle is gone and `ValidationError`
+   * (rollback message) when the reading is below the stored mileage, which is checked by the
+   * write itself. Returns the vehicle as saved.
    */
   recordService(vehicleId: string, service: ServiceRecord): Promise<Vehicle>;
 }

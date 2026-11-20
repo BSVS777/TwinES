@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { Conflict } from "@/application/errors";
+import { Conflict, NotFound, ValidationError } from "@/application/errors";
 import type { NewVehicle } from "@/application/ports";
+import { MILEAGE_ROLLBACK_MESSAGE } from "@/application/validation/vehicle";
 import { MAINTENANCE_CATALOG } from "@/domain/part-health/catalog";
 import type { PartBaseline } from "@/domain/part-health/health-estimator";
 import type { CalendarDate } from "@/domain/shared/calendar-date";
@@ -130,6 +131,48 @@ describe("PrismaVehicleRepository", () => {
     });
   });
 
+  describe("update and the odometer", () => {
+    const rollback = { errors: { currentMileageKm: MILEAGE_ROLLBACK_MESSAGE } };
+
+    it("raises the mileage and keeps it when the same value is written again", async () => {
+      const created = await vehicles.create(newVehicle());
+
+      expect((await vehicles.update(created.id, { currentMileageKm: 46000 })).currentMileageKm).toBe(46000);
+      expect((await vehicles.update(created.id, { currentMileageKm: 46000 })).currentMileageKm).toBe(46000);
+    });
+
+    it("VEH-09 refuses a value below the stored one even when the caller read the old value earlier", async () => {
+      const created = await vehicles.create(newVehicle());
+      // Another request raises the odometer after this caller read 45000 ...
+      await vehicles.update(created.id, { currentMileageKm: 46000 });
+
+      // ... and then this caller writes a value based on its stale read.
+      const stale = vehicles.update(created.id, { currentMileageKm: 45200, make: "Honda" });
+
+      await expect(stale).rejects.toBeInstanceOf(ValidationError);
+      await expect(stale).rejects.toMatchObject(rollback);
+      const stored = await vehicles.findById(created.id);
+      expect(stored).toMatchObject({ currentMileageKm: 46000, make: "Toyota" });
+    });
+
+    it("answers NotFound for a vehicle that no longer exists, with or without a mileage", async () => {
+      await expect(vehicles.update("missing-id", { currentMileageKm: 46000 })).rejects.toBeInstanceOf(NotFound);
+      await expect(vehicles.update("missing-id", { make: "Honda" })).rejects.toBeInstanceOf(NotFound);
+    });
+
+    it("never ends below the highest reading when writes race", async () => {
+      const created = await vehicles.create(newVehicle());
+      const readings = [45100, 45900, 45300, 45700, 45500, 45200, 45800];
+
+      const results = await Promise.allSettled(readings.map((km) => vehicles.update(created.id, { currentMileageKm: km })));
+
+      expect((await vehicles.findById(created.id))?.currentMileageKm).toBe(45900);
+      for (const result of results) {
+        if (result.status === "rejected") expect(result.reason).toBeInstanceOf(ValidationError);
+      }
+    });
+  });
+
   describe("delete", () => {
     it("removes the vehicle and cascades to its baselines only", async () => {
       const doomed = await vehicles.create(newVehicle({ baselines: allBaselines }));
@@ -172,11 +215,12 @@ describe("PrismaVehicleRepository", () => {
 
   describe("recordService", () => {
     const serviced = { partId: "engine-oil", mileageKm: 45200, date: "2026-11-19" as CalendarDate } as const;
+    const visit = { partId: "engine-oil", date: "2026-11-19" as CalendarDate } as const;
 
     it("saves the new mileage and replaces the part's baseline together", async () => {
       const created = await vehicles.create(newVehicle({ baselines: allBaselines }));
 
-      const saved = await vehicles.recordService(created.id, { baseline: serviced, currentMileageKm: 45200 });
+      const saved = await vehicles.recordService(created.id, { ...visit, currentMileageKm: 45200 });
 
       expect(saved.currentMileageKm).toBe(45200);
       expect(saved.baselines).toHaveLength(8);
@@ -188,25 +232,67 @@ describe("PrismaVehicleRepository", () => {
     it("keeps the mileage as it is when none is given and adds a baseline the part did not have", async () => {
       const created = await vehicles.create(newVehicle());
 
-      const saved = await vehicles.recordService(created.id, { baseline: serviced });
+      const saved = await vehicles.recordService(created.id, visit);
 
       expect(saved.currentMileageKm).toBe(45000);
-      expect(saved.baselines).toEqual([serviced]);
+      expect(saved.baselines).toEqual([{ ...serviced, mileageKm: 45000 }]);
     });
 
     it("leaves other vehicles alone", async () => {
       const created = await vehicles.create(newVehicle());
       const other = await vehicles.create(newVehicle({ plate: "XYZ-999" }));
 
-      await vehicles.recordService(created.id, { baseline: serviced, currentMileageKm: 45200 });
+      await vehicles.recordService(created.id, { ...visit, currentMileageKm: 45200 });
 
       expect(await vehicles.findById(other.id)).toEqual(other);
     });
 
-    it("rejects an unknown vehicle and writes nothing", async () => {
-      await expect(vehicles.recordService("missing-id", { baseline: serviced, currentMileageKm: 45200 })).rejects.toThrow();
+    it("answers NotFound for an unknown vehicle, with or without a reading, and writes nothing", async () => {
+      await expect(vehicles.recordService("missing-id", { ...visit, currentMileageKm: 45200 })).rejects.toBeInstanceOf(NotFound);
+      await expect(vehicles.recordService("missing-id", visit)).rejects.toBeInstanceOf(NotFound);
 
       expect(await getDb().partBaseline.count()).toBe(0);
+    });
+
+    it("VEH-09 refuses a stale reading, keeps the higher mileage and writes no baseline", async () => {
+      const created = await vehicles.create(newVehicle());
+      // Another request raises the odometer after this caller read 45000 ...
+      await vehicles.update(created.id, { currentMileageKm: 46000 });
+
+      // ... and then this caller records a service with a reading based on its stale read.
+      const stale = vehicles.recordService(created.id, { ...visit, currentMileageKm: 45200 });
+
+      await expect(stale).rejects.toBeInstanceOf(ValidationError);
+      await expect(stale).rejects.toMatchObject({ errors: { currentMileageKm: MILEAGE_ROLLBACK_MESSAGE } });
+      expect((await vehicles.findById(created.id))?.currentMileageKm).toBe(46000);
+      expect(await getDb().partBaseline.count()).toBe(0);
+    });
+
+    it("takes the baseline mileage from the stored row when no reading is given", async () => {
+      const created = await vehicles.create(newVehicle());
+      await vehicles.update(created.id, { currentMileageKm: 46000 });
+
+      const saved = await vehicles.recordService(created.id, visit);
+
+      expect(saved.currentMileageKm).toBe(46000);
+      expect(saved.baselines).toEqual([{ ...serviced, mileageKm: 46000 }]);
+    });
+
+    it("never ends below the highest reading when services and edits race", async () => {
+      const created = await vehicles.create(newVehicle());
+
+      const results = await Promise.allSettled([
+        vehicles.recordService(created.id, { ...visit, currentMileageKm: 45200 }),
+        vehicles.update(created.id, { currentMileageKm: 45900 }),
+        vehicles.recordService(created.id, { ...visit, partId: "tires", currentMileageKm: 45500 }),
+        vehicles.update(created.id, { currentMileageKm: 45100 }),
+        vehicles.recordService(created.id, { ...visit, partId: "battery", currentMileageKm: 45700 }),
+      ]);
+
+      expect((await vehicles.findById(created.id))?.currentMileageKm).toBe(45900);
+      for (const result of results) {
+        if (result.status === "rejected") expect(result.reason).toBeInstanceOf(ValidationError);
+      }
     });
 
     it("saves neither the mileage nor the baseline when the baseline write fails", async () => {
@@ -219,7 +305,7 @@ describe("PrismaVehicleRepository", () => {
 
       try {
         await expect(
-          vehicles.recordService(created.id, { baseline: { ...serviced, mileageKm: 45201 }, currentMileageKm: 45201 }),
+          vehicles.recordService(created.id, { ...visit, currentMileageKm: 45201 }),
         ).rejects.toThrow();
       } finally {
         await getDb().$executeRawUnsafe("DROP TRIGGER fail_service_baseline");
