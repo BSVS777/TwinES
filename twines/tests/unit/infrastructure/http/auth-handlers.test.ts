@@ -68,6 +68,21 @@ describe("auth route handlers", () => {
       expect((await getCurrentUser(deps, token))?.email).toBe(EMAIL);
     });
 
+    it("AUTH-01 signs up and sets the cookie even when the email was locked by earlier failed sign-ins", async () => {
+      for (let i = 0; i < MAX_FAILED_ATTEMPTS; i += 1) {
+        await handlers.signIn(post("sign-in", { email: EMAIL, password: "nope-1234" }));
+      }
+      expect((await throttles.find(EMAIL))?.lockedUntil).not.toBeNull();
+
+      const response = await signUpAna();
+
+      expect(response.status).toBe(201);
+      expect(sessionToken(response)).toBe("token-1");
+      expect(await throttles.find(EMAIL)).toBeNull();
+      const signedIn = await handlers.signIn(post("sign-in", { email: EMAIL, password: PASSWORD }));
+      expect(signedIn.status).toBe(200);
+    });
+
     it("AUTH-09 sets the session cookie httpOnly and SameSite=Lax", async () => {
       const header = (await signUpAna()).headers.get("set-cookie") ?? "";
 

@@ -1,10 +1,10 @@
 import { toPublicUser } from "@/application/auth/public-user";
+import { SESSION_TTL_MS, startSession, type SessionResult } from "@/application/auth/start-session";
 import { TooManyAttempts, Unauthorized } from "@/application/errors";
 import type {
   Clock,
   LoginThrottleStore,
   PasswordHasher,
-  PublicUser,
   SessionStore,
   SessionTokens,
   UserRepository,
@@ -14,7 +14,7 @@ import { parseInput } from "@/application/validation/parse";
 
 export const MAX_FAILED_ATTEMPTS = 5;
 export const LOCK_DURATION_MS = 15 * 60 * 1000;
-export const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export { SESSION_TTL_MS };
 
 /**
  * A valid bcrypt hash (cost 12) of a random value nobody knows. Unknown emails are verified
@@ -34,12 +34,7 @@ export interface SignInDeps {
   clock: Clock;
 }
 
-export interface SignInResult {
-  /** Raw session token. The caller sets it as the cookie value; only its hash is stored. */
-  token: string;
-  user: PublicUser;
-  expiresAt: Date;
-}
+export type SignInResult = SessionResult;
 
 /**
  * Authenticates by email and password and starts a session.
@@ -52,7 +47,7 @@ export interface SignInResult {
  * parallel guesses cannot slip under the limit.
  */
 export async function signIn(deps: SignInDeps, input: unknown): Promise<SignInResult> {
-  const { users, sessions, throttles, hasher, tokens, clock } = deps;
+  const { users, throttles, hasher, clock } = deps;
   const { email, password } = parseInput(signInSchema, input);
   const now = clock.now();
 
@@ -72,8 +67,5 @@ export async function signIn(deps: SignInDeps, input: unknown): Promise<SignInRe
 
   if (throttle) await throttles.reset(email);
 
-  const token = tokens.generate();
-  const expiresAt = new Date(now.getTime() + SESSION_TTL_MS);
-  await sessions.create({ tokenHash: tokens.hash(token), userId: user.id, expiresAt });
-  return { token, user: toPublicUser(user), expiresAt };
+  return startSession(deps, toPublicUser(user));
 }

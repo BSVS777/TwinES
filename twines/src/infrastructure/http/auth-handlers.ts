@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { signIn, type SignInDeps } from "@/application/auth/sign-in";
 import { signOut } from "@/application/auth/sign-out";
-import { signUp } from "@/application/auth/sign-up";
+import { signUpWithSession, type SignUpWithSessionDeps } from "@/application/auth/sign-up-with-session";
 import {
   clearSessionCookie,
   readSessionToken,
@@ -26,17 +26,13 @@ async function readJson(request: Request): Promise<unknown> {
  * route module may only export HTTP methods, and so tests can call them with plain `Request`s.
  * Responses expose only the public user and the session cookie, never the password hash.
  */
-export function createAuthHandlers(deps: SignInDeps) {
+export function createAuthHandlers(deps: SignInDeps & SignUpWithSessionDeps) {
   return {
-    /** AUTH-01: creates an owner and signs them in right away. */
+    /** AUTH-01: creates an owner and starts their session directly, never through the throttled sign-in. */
     signUp: (request: Request) =>
       handle(async () => {
         assertSameOrigin(request);
-        const body = await readJson(request);
-        const created = await signUp(deps, body);
-        // `signUp` accepted the body, so it holds the validated password.
-        const { password } = body as { password: string };
-        const session = await signIn(deps, { email: created.email, password });
+        const session = await signUpWithSession(deps, await readJson(request));
 
         const response = NextResponse.json({ user: session.user }, { status: 201 });
         setSessionCookie(response, session.token, cookieOptions());
