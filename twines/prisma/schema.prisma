@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  // "owner" | "technician"; validated by the application layer.
+  role         String
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+  vehicles     Vehicle[]
+}
+
+model Session {
+  // SHA-256 hex digest of the session token; the raw token only lives in the cookie.
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model LoginThrottle {
+  email       String    @id
+  failedCount Int       @default(0)
+  lockedUntil DateTime?
+}
+
+model Vehicle {
+  id               String         @id @default(cuid())
+  ownerId          String
+  owner            User           @relation(fields: [ownerId], references: [id])
+  plate            String         @unique
+  make             String
+  model            String
+  year             Int
+  bodyType         String
+  currentMileageKm Int
+  // Calendar date as YYYY-MM-DD.
+  purchaseDate     String
+  monthlyMileageKm Int
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  baselines        PartBaseline[]
+
+  @@index([ownerId])
+}
+
+model PartBaseline {
+  vehicleId String
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  partId    String
+  mileageKm Int
+  // Calendar date as YYYY-MM-DD.
+  date      String
+
+  @@id([vehicleId, partId])
+}

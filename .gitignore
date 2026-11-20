@@ -18,6 +18,8 @@ next-env.d.ts
 *.db
 *.db-journal
 *.sqlite
+*.db-wal
+*.db-shm
 
 # Test artifacts
 coverage/
@@ -41,3 +43,6 @@ Thumbs.db
 
 # Local-only documents (not part of the project)
 PROYECTO QA.pdf
+
+# Generated Prisma client
+twines/src/generated/
