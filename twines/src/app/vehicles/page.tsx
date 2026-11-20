@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { OwnersOnlyNotice } from "@/components/vehicles/owners-only-notice";
 import { VehicleList } from "@/components/vehicles/vehicle-list";
 import { listVehicles } from "@/application/vehicles/list-vehicles";
 import { requireUser } from "@/infrastructure/auth/current-user";
@@ -15,7 +14,6 @@ export default async function VehiclesPage() {
   const user = await requireUser();
   // Sign-in always lands here; technicians continue to their own start page, owners stay.
   if (user.role === "technician") redirect("/technician");
-  if (user.role !== "owner") return <OwnersOnlyNotice />;
 
   const vehicles = await listVehicles(getContainer(), user);
   return (

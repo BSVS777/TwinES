@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { forbidden, notFound } from "next/navigation";
 import { NotFound } from "@/application/errors";
 import { getVehicleHealth } from "@/application/vehicles/get-vehicle-health";
 import { VehicleForm } from "@/components/forms/vehicle-form";
 import { BaselineForm } from "@/components/forms/baseline-form";
 import { DeleteVehicleButton } from "@/components/vehicles/delete-vehicle-button";
-import { OwnersOnlyNotice } from "@/components/vehicles/owners-only-notice";
 import { MAINTENANCE_CATALOG } from "@/domain/part-health/catalog";
 import { requireUser } from "@/infrastructure/auth/current-user";
 import { getContainer } from "@/infrastructure/container";
@@ -15,7 +14,7 @@ export const metadata: Metadata = { title: "Edit vehicle | TwinES" };
 
 export default async function EditVehiclePage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
-  if (user.role !== "owner") return <OwnersOnlyNotice />;
+  if (user.role !== "owner") forbidden();
 
   const { id } = await params;
   // An owner reaches only their own vehicle: someone else's looks exactly like a missing one (VEH-12).

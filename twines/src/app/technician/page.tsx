@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import { forbidden } from "next/navigation";
 import { PlateSearchForm } from "@/components/technician/plate-search-form";
-import { TechniciansOnlyNotice } from "@/components/technician/technicians-only-notice";
 import { requireUser } from "@/infrastructure/auth/current-user";
 import styles from "../vehicles/vehicles-page.module.css";
 
@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Find a vehicle | TwinES" };
 export default async function TechnicianPage() {
   // A layout is not re-rendered on every client navigation, so the page checks the session too.
   const user = await requireUser();
-  if (user.role !== "technician") return <TechniciansOnlyNotice />;
+  if (user.role !== "technician") forbidden();
 
   return (
     <div className={styles.narrow}>
