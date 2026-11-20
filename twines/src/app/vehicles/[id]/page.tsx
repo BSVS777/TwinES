@@ -32,6 +32,11 @@ export default async function VehicleHealthPage({ params }: { params: Promise<{ 
           </Link>
         </div>
       )}
+      {user.role === "technician" && (
+        <div className={styles.header}>
+          <Link href="/technician">Find another vehicle</Link>
+        </div>
+      )}
       {/* Only serializable details cross to the client; the owner id stays on the server. */}
       <VehicleHealthWithModel
         vehicle={{
@@ -46,6 +51,7 @@ export default async function VehicleHealthPage({ params }: { params: Promise<{ 
         nextMaintenance={nextMaintenance}
         parts={buildPartRows(health, dues)}
         canMarkServiced={user.role === "technician"}
+        serviceVehicleId={user.role === "technician" ? vehicle.id : undefined}
       />
     </>
   );

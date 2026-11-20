@@ -114,9 +114,9 @@ Conventions for every work unit:
 
 ## Phase 6: Technician flow, seed and end-to-end (PR 11, PR 12)
 
-- [ ] 6.1 RED: `twines/tests/unit/application/technician/*.test.ts` — find by plate case-insensitive (VEH-14), not found (VEH-15), record service updates mileage and baseline and returns green (VEH-16, MNT-08), mileage cannot decrease, owner → Forbidden (AUTH-15), technician edit/delete → Forbidden (VEH-17)
-- [ ] 6.2 GREEN: `twines/src/application/technician/{find-vehicle-by-plate,record-service}.ts`
-- [ ] 6.3 Create `twines/src/app/api/technician/vehicles/route.ts`, `twines/src/app/api/technician/vehicles/[id]/service/route.ts`, `twines/src/app/technician/page.tsx`; connect the panel action
+- [x] 6.1 RED: `twines/tests/unit/application/technician/*.test.ts` — find by plate case-insensitive (VEH-14), not found (VEH-15), record service updates mileage and baseline and returns green (VEH-16, MNT-08), mileage cannot decrease, owner → Forbidden (AUTH-15), technician edit/delete → Forbidden (VEH-17)
+- [x] 6.2 GREEN: `twines/src/application/technician/{find-vehicle-by-plate,record-service}.ts`
+- [x] 6.3 Create `twines/src/app/api/technician/vehicles/route.ts`, `twines/src/app/api/technician/vehicles/[id]/service/route.ts`, `twines/src/app/technician/page.tsx`; connect the panel action
 - [ ] 6.4 Create `twines/prisma/seed.ts` (technician, two owners, vehicles covering green/yellow/orange/red and overdue)
 - [ ] 6.5 Create `twines/tests/e2e/auth.spec.ts` — sign-up, sign-in, generic error, lockout, sign-out invalidation, anonymous redirect (AUTH-01, 07, 08, 10, 12, 13)
 - [ ] 6.6 Create `twines/tests/e2e/vehicles.spec.ts` — register, validation errors, edit, mileage rollback, delete, empty state (VEH-01..04, 08..11)
