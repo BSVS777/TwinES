@@ -7,14 +7,16 @@ import { createContainer } from "@/infrastructure/container";
 import { PrismaLoginThrottleStore } from "@/infrastructure/repositories/login-throttle-repository";
 import { PrismaSessionStore } from "@/infrastructure/repositories/session-repository";
 import { PrismaUserRepository } from "@/infrastructure/repositories/user-repository";
+import { PrismaVehicleRepository } from "@/infrastructure/repositories/vehicle-repository";
 
 describe("createContainer", () => {
-  it("wires the production adapters for every port the auth use cases need", () => {
+  it("wires the production adapters for every port the auth and vehicle use cases need", () => {
     const container = createContainer({} as PrismaClient);
 
     expect(container.users).toBeInstanceOf(PrismaUserRepository);
     expect(container.sessions).toBeInstanceOf(PrismaSessionStore);
     expect(container.throttles).toBeInstanceOf(PrismaLoginThrottleStore);
+    expect(container.vehicles).toBeInstanceOf(PrismaVehicleRepository);
     expect(container.hasher).toBeInstanceOf(BcryptPasswordHasher);
     expect(container.tokens).toBeInstanceOf(CryptoSessionTokens);
     expect(container.clock).toBeInstanceOf(SystemClock);
