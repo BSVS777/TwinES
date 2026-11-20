@@ -1,5 +1,6 @@
-import type { PartId } from "@/domain/part-health/catalog";
+import { MarkServicedAction } from "./MarkServicedAction";
 import { StatusBadge } from "./StatusBadge";
+import type { RecordServiceAction } from "./use-service-recorder";
 import { describeRemainingDays, describeRemainingKm, type PartRow } from "./part-rows";
 import styles from "./PartDetailPanel.module.css";
 
@@ -8,12 +9,14 @@ interface PartDetailPanelProps {
   part: PartRow | null;
   /** True only for technicians (VIEW-08); owners never get the service action (VIEW-09). */
   canMarkServiced: boolean;
-  /** Called with the selected part when the action is used; the service flow is wired separately. */
-  onMarkServiced?: (partId: PartId) => void;
+  /** The vehicle's mileage, offered as the starting value of the service form's optional reading. */
+  currentMileageKm?: number;
+  /** Sends the service for the selected part and resolves to an error message, or null when saved. */
+  onMarkServiced?: RecordServiceAction;
 }
 
 /** The selected part's status, usage, remaining km and days and due date. */
-export function PartDetailPanel({ part, canMarkServiced, onMarkServiced }: PartDetailPanelProps) {
+export function PartDetailPanel({ part, canMarkServiced, currentMileageKm, onMarkServiced }: PartDetailPanelProps) {
   return (
     <section className={styles.panel} aria-label="Part details" aria-live="polite">
       {part ? (
@@ -45,9 +48,13 @@ export function PartDetailPanel({ part, canMarkServiced, onMarkServiced }: PartD
             </div>
           </dl>
           {canMarkServiced && (
-            <button type="button" className={styles.action} onClick={() => onMarkServiced?.(part.partId)}>
-              Mark as serviced
-            </button>
+            // Keyed by part, so choosing another part starts from a closed form.
+            <MarkServicedAction
+              key={part.partId}
+              partId={part.partId}
+              currentMileageKm={currentMileageKm}
+              onMarkServiced={onMarkServiced}
+            />
           )}
         </>
       ) : (

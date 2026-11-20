@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { VehicleHealthView } from "@/components/vehicle-health/VehicleHealthView";
 import type { VehicleVisualProps } from "@/components/vehicle-health/vehicle-visual";
@@ -128,14 +128,16 @@ describe("VehicleHealthView", () => {
     expect(screen.getAllByRole("button", { pressed: true })).toHaveLength(2);
   });
 
-  it("VIEW-08 offers Mark as serviced to a technician and reports the selected part", () => {
-    const onMarkServiced = vi.fn();
+  it("VIEW-08 offers Mark as serviced to a technician, prefilled with the vehicle's mileage, and reports the selected part", async () => {
+    const onMarkServiced = vi.fn().mockResolvedValue(null);
     renderView({ canMarkServiced: true, onMarkServiced });
 
     fireEvent.click(screen.getByRole("button", { name: "Engine oil" }));
     fireEvent.click(screen.getByRole("button", { name: "Mark as serviced" }));
+    expect(screen.getByLabelText("Current mileage (km)")).toHaveValue(45250);
+    fireEvent.click(screen.getByRole("button", { name: "Confirm service" }));
 
-    expect(onMarkServiced).toHaveBeenCalledExactlyOnceWith("engine-oil");
+    await waitFor(() => expect(onMarkServiced).toHaveBeenCalledExactlyOnceWith("engine-oil", 45250));
   });
 
   it("VIEW-09 never shows Mark as serviced to an owner", () => {

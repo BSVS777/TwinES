@@ -58,3 +58,80 @@
   outline: 3px solid #1d4ed8;
   outline-offset: 2px;
 }
+
+.action:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.secondary {
+  padding: 0.6rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: #ffffff;
+  border: 1px solid #1d4ed8;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.secondary:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+.secondary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.service {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.serviceField {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.serviceField label {
+  font-weight: 600;
+}
+
+.serviceField input {
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  border: 1px solid #8a8f98;
+  border-radius: 0.375rem;
+}
+
+.serviceField input:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 1px;
+}
+
+.serviceField input[aria-invalid="true"] {
+  border-color: #b42318;
+}
+
+.serviceError {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #b42318;
+  border-radius: 0.375rem;
+  background: #fef3f2;
+  color: #912018;
+}
+
+.serviceButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.recorded {
+  margin: 0;
+  color: #054f31;
+  font-weight: 600;
+}

@@ -7,6 +7,9 @@ import { stubMatchMedia } from "./match-media";
 
 vi.mock("@/components/vehicle-health/useWebGLSupport", () => ({ useWebGLSupport: vi.fn() }));
 
+const router = vi.hoisted(() => ({ push: vi.fn(), refresh: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => router }));
+
 // Only the WebGL parts are replaced; Vehicle3D, the dynamic loading and the view are the real ones.
 vi.mock("@react-three/fiber", () => ({
   Canvas: ({ children }: { children: React.ReactNode }) => <div data-testid="canvas">{children}</div>,
@@ -86,6 +89,69 @@ describe("VehicleHealthWithModel", () => {
     expect(screen.getByRole("button", { name: "Engine oil: Red" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Brake pads: Green" })).toHaveAttribute("aria-pressed", "false");
     await waitFor(() => expect(screen.getByTestId("orbit-controls")).toHaveAttribute("data-auto-rotate", "false"));
+  });
+
+  describe("service action wiring", () => {
+    function renderTechnicianPage() {
+      return render(
+        <VehicleHealthWithModel
+          vehicle={VEHICLE}
+          overallStatus="orange"
+          nextMaintenance={NEXT}
+          parts={PART_ROWS}
+          canMarkServiced
+          serviceVehicleId="vehicle-9"
+        />,
+      );
+    }
+
+    it("VEH-16 posts the service to the vehicle's endpoint and refreshes the page data", async () => {
+      vi.mocked(useWebGLSupport).mockReturnValue(false);
+      router.refresh.mockReset();
+      const fetchMock = vi.fn(async () => Response.json({ vehicle: {} }));
+      vi.stubGlobal("fetch", fetchMock);
+      renderTechnicianPage();
+
+      fireEvent.click(screen.getByRole("button", { name: "Engine oil" }));
+      fireEvent.click(screen.getByRole("button", { name: "Mark as serviced" }));
+      fireEvent.change(screen.getByLabelText("Current mileage (km)"), { target: { value: "45300" } });
+      fireEvent.click(screen.getByRole("button", { name: "Confirm service" }));
+
+      expect(await screen.findByRole("status")).toHaveTextContent("Service recorded");
+      expect(router.refresh).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+        "/api/technician/vehicles/vehicle-9/service",
+        expect.objectContaining({ method: "POST", body: JSON.stringify({ partId: "engine-oil", currentMileageKm: 45300 }) }),
+      );
+    });
+
+    it("VEH-09 shows the server's message and does not refresh when the service is refused", async () => {
+      vi.mocked(useWebGLSupport).mockReturnValue(false);
+      router.refresh.mockReset();
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () =>
+          Response.json({ errors: { currentMileageKm: "Mileage cannot be lower than the current value" } }, { status: 400 }),
+        ),
+      );
+      renderTechnicianPage();
+
+      fireEvent.click(screen.getByRole("button", { name: "Engine oil" }));
+      fireEvent.click(screen.getByRole("button", { name: "Mark as serviced" }));
+      fireEvent.click(screen.getByRole("button", { name: "Confirm service" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("Mileage cannot be lower than the current value");
+      expect(router.refresh).not.toHaveBeenCalled();
+    });
+
+    it("VIEW-09 offers no action without a service vehicle", () => {
+      vi.mocked(useWebGLSupport).mockReturnValue(false);
+      renderPage();
+
+      fireEvent.click(screen.getByRole("button", { name: "Engine oil" }));
+
+      expect(screen.queryByRole("button", { name: "Mark as serviced" })).not.toBeInTheDocument();
+    });
   });
 
   it("VIEW-07 renders the model without auto-rotation when reduced motion is preferred", async () => {

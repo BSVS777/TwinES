@@ -9,6 +9,7 @@ import { PartDetailPanel } from "./PartDetailPanel";
 import { PartList } from "./PartList";
 import { VehicleDiagram2D } from "./VehicleDiagram2D";
 import type { PartRow } from "./part-rows";
+import type { RecordServiceAction } from "./use-service-recorder";
 import { useWebGLSupport } from "./useWebGLSupport";
 import type { VehicleVisualProps } from "./vehicle-visual";
 import styles from "./VehicleHealthView.module.css";
@@ -20,7 +21,8 @@ interface VehicleHealthViewProps {
   parts: readonly PartRow[];
   /** True only for technicians. */
   canMarkServiced: boolean;
-  onMarkServiced?: (partId: PartId) => void;
+  /** Sends the service for the selected part and resolves to an error message, or null when saved. */
+  onMarkServiced?: RecordServiceAction;
   /**
    * The seam for the 3D model: when given and WebGL is available it replaces the 2D diagram.
    * Without it, or without WebGL, the 2D diagram is always shown.
@@ -54,7 +56,12 @@ export function VehicleHealthView({
       <div className={styles.columns}>
         <div className={styles.visual}>
           <Visual bodyType={vehicle.bodyType} parts={parts} selectedPartId={selectedPartId} onSelect={setSelectedPartId} />
-          <PartDetailPanel part={selectedPart} canMarkServiced={canMarkServiced} onMarkServiced={onMarkServiced} />
+          <PartDetailPanel
+            part={selectedPart}
+            canMarkServiced={canMarkServiced}
+            currentMileageKm={vehicle.currentMileageKm}
+            onMarkServiced={onMarkServiced}
+          />
         </div>
         <PartList parts={parts} selectedPartId={selectedPartId} onSelect={setSelectedPartId} />
       </div>
