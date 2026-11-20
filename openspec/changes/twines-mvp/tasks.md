@@ -117,12 +117,24 @@ Conventions for every work unit:
 - [x] 6.1 RED: `twines/tests/unit/application/technician/*.test.ts` — find by plate case-insensitive (VEH-14), not found (VEH-15), record service updates mileage and baseline and returns green (VEH-16, MNT-08), mileage cannot decrease, owner → Forbidden (AUTH-15), technician edit/delete → Forbidden (VEH-17)
 - [x] 6.2 GREEN: `twines/src/application/technician/{find-vehicle-by-plate,record-service}.ts`
 - [x] 6.3 Create `twines/src/app/api/technician/vehicles/route.ts`, `twines/src/app/api/technician/vehicles/[id]/service/route.ts`, `twines/src/app/technician/page.tsx`; connect the panel action
-- [ ] 6.4 Create `twines/prisma/seed.ts` (technician, two owners, vehicles covering green/yellow/orange/red and overdue)
+- [x] 6.4 Create `twines/prisma/seed.ts` (technician, two owners, vehicles covering green/yellow/orange/red and overdue)
+  - `npm run db:seed` runs `tsx prisma/seed.ts` (tsx 4.23.15 pinned); the pure data and the "relative baseline" helper live in `twines/prisma/seed-data.ts`, the idempotent orchestration in `twines/prisma/seed-database.ts`
+  - Fails fast, before opening the database, when `SEED_TECH_PASSWORD` or `SEED_OWNER_PASSWORD` is missing, shorter than 8 characters or over 72 bytes; no password is hardcoded or logged
+  - Accounts `tech@twines.test`, `owner.one@twines.test` and `owner.two@twines.test` are found by email and kept (an existing account keeps its password); each seed vehicle is found by plate and rebuilt, so a re-run duplicates nothing and undoes later edits
+  - Baselines are measured back from the Clock's today (`TWINES_FIXED_TODAY` honored under the app's rules), so owner one always has an all-green, a yellow, an orange, a red and a time-overdue vehicle across the four body types, and owner two has one vehicle; `SEED_EXPECTATIONS` (by plate) is the exported source of truth for end-to-end assertions
+  - Tests: `tests/unit/seed/*` (helper proven against the domain estimator for every part, status, driver and several dates; password validation) and `tests/integration/seed.test.ts` (idempotency, ownership, hashing, statuses through `getVehicleHealth`)
 - [ ] 6.5 Create `twines/tests/e2e/auth.spec.ts` — sign-up, sign-in, generic error, lockout, sign-out invalidation, anonymous redirect (AUTH-01, 07, 08, 10, 12, 13)
 - [ ] 6.6 Create `twines/tests/e2e/vehicles.spec.ts` — register, validation errors, edit, mileage rollback, delete, empty state (VEH-01..04, 08..11)
 - [ ] 6.7 Create `twines/tests/e2e/health-view.spec.ts` — summary, list, hotspot click and panel, 2D fallback with WebGL disabled (VIEW-01..06)
 - [ ] 6.8 Create `twines/tests/e2e/technician.spec.ts` — plate search, not found, mark serviced turns part green, owner sees no action (VEH-14..16, VIEW-08/09)
 - [ ] 6.9 Create `twines/tests/e2e/api-security.spec.ts` — 401 anonymous (AUTH-14), 403 owner on technician endpoints (AUTH-15), 404 cross-owner (VEH-12/13), 403 technician edit/delete (VEH-17), 403 foreign Origin, cookie flags (AUTH-09)
+- [x] 6.10 Follow-ups from the independent verification of PR 11 (PR 12a)
+  - B1 real 403 for wrong-role pages (AUTH-15, VEH-17): `experimental.authInterrupts` in `twines/next.config.ts`; `forbidden()` in `src/app/technician/page.tsx` for owners and in `src/app/vehicles/new/page.tsx` and `src/app/vehicles/[id]/edit/page.tsx` for technicians, rendered by `src/app/forbidden.tsx` ("Access denied"); the role notices were removed; `/vehicles` still redirects technicians to `/technician`
+  - W1 mileage rollback race: the odometer check is part of the write (`UPDATE ... WHERE currentMileageKm <= new` in `update`; conditional `updateMany` inside the interactive transaction of `recordService`); a lost race answers the same 400 `ValidationError` with `MILEAGE_ROLLBACK_MESSAGE`; an omitted reading takes the baseline mileage from the row read in that transaction (`ServiceRecord` is now `{ partId, date, currentMileageKm? }`)
+  - S1 tests: extra body keys (`ownerId`, `plate`) ignored on the service endpoint; negative and infinite (`1e999`) mileage rejected
+  - S2 `plateSearchSchema` shares the registration plate rules (max 8, `[A-Z0-9-]` after normalization)
+  - S3 an unknown vehicle between the read and the write is a `NotFound` (404) from the repository, not a raw Prisma error
+  - S4 handler tests: technician `PUT` and `POST /api/vehicles/:id/baselines` answer 403 and leave the baselines unchanged
 
 ## Phase 7: Documentation and traceability (PR 12)
 
