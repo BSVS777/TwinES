@@ -18,10 +18,13 @@ type CookieReader = Pick<NextRequest["cookies"], "get">;
 
 /**
  * Next.js passes route handlers and the proxy its own request class, which already parses
- * cookies and cannot be wrapped a second time. A plain `Request` is wrapped so tests can use one.
+ * cookies and cannot be wrapped a second time. A plain `Request` is wrapped so tests can use one;
+ * only its URL and headers are copied, because wrapping the request itself would consume its
+ * body before the handler gets to read it.
  */
 function cookiesOf(request: Request): CookieReader {
-  return "cookies" in request ? (request as NextRequest).cookies : new NextRequest(request).cookies;
+  if ("cookies" in request) return (request as NextRequest).cookies;
+  return new NextRequest(request.url, { headers: request.headers }).cookies;
 }
 
 /** The raw session token from the request's cookies, or null when there is none. */

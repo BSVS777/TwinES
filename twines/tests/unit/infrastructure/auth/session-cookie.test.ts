@@ -35,6 +35,19 @@ describe("session cookie", () => {
     });
   });
 
+  describe("readSessionToken and the request body", () => {
+    it("leaves the body of a plain Request unread so the handler can still parse it", async () => {
+      const request = new Request("http://localhost:3000/api/vehicles", {
+        method: "POST",
+        headers: { cookie: "twines_session=abc123" },
+        body: JSON.stringify({ plate: "ABC-123" }),
+      });
+
+      expect(readSessionToken(request)).toBe("abc123");
+      expect(await request.json()).toEqual({ plate: "ABC-123" });
+    });
+  });
+
   describe("readSessionToken with a request that already parses cookies", () => {
     it("reads from its cookies instead of building a second request from it", () => {
       // Next.js hands route handlers its own request class, which cannot be wrapped again.
