@@ -95,10 +95,10 @@ Conventions for every work unit:
 - [x] 4.2 GREEN: `twines/src/application/validation/vehicle.ts`
 - [x] 4.3 RED: `twines/tests/unit/application/vehicles/*.test.ts` — register with default baselines (VEH-01, VEH-05), duplicate plate (VEH-02), set baseline (VEH-06), list own only (VEH-08), mileage never decreases (VEH-09), delete removes baselines (VEH-10), cross-owner read/edit/delete → NotFound (VEH-12/13), get health composes estimator + schedule
 - [x] 4.4 GREEN: `twines/src/application/vehicles/{register-vehicle,list-vehicles,get-vehicle-health,update-vehicle,delete-vehicle,set-baseline}.ts`
-- [ ] 4.5 Create `twines/src/app/api/vehicles/route.ts`, `twines/src/app/api/vehicles/[id]/route.ts`, `twines/src/app/api/vehicles/[id]/baselines/route.ts` (401 when anonymous: AUTH-14)
-- [ ] 4.6 RED: `twines/tests/component/forms/vehicle-form.test.tsx` — field errors render per field, submit payload shape
-- [ ] 4.7 GREEN: `twines/src/components/forms/{vehicle-form,baseline-form}.tsx`
-- [ ] 4.8 Create `twines/src/app/vehicles/page.tsx` (list + empty state VEH-11), `twines/src/app/vehicles/new/page.tsx`, `twines/src/app/vehicles/[id]/edit/page.tsx` with delete confirmation
+- [x] 4.5 Create `twines/src/app/api/vehicles/route.ts`, `twines/src/app/api/vehicles/[id]/route.ts`, `twines/src/app/api/vehicles/[id]/baselines/route.ts` (401 when anonymous: AUTH-14)
+- [x] 4.6 RED: `twines/tests/component/forms/vehicle-form.test.tsx` — field errors render per field, submit payload shape
+- [x] 4.7 GREEN: `twines/src/components/forms/{vehicle-form,baseline-form}.tsx`
+- [x] 4.8 Create `twines/src/app/vehicles/page.tsx` (list + empty state VEH-11), `twines/src/app/vehicles/new/page.tsx`, `twines/src/app/vehicles/[id]/edit/page.tsx` with delete confirmation
 
 ## Phase 5: Health view (PR 9, PR 10)
 
