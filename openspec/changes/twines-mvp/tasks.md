@@ -74,9 +74,9 @@ Conventions for every work unit:
 - [x] 3.6 GREEN: `twines/src/application/validation/auth.ts`, `twines/src/application/auth/sign-up.ts`, `twines/src/infrastructure/auth/bcrypt-hasher.ts`
 - [x] 3.7 RED: `twines/tests/unit/application/auth/sign-in.test.ts` — success (AUTH-07), identical message for wrong password and unknown email (AUTH-08), lockout after 5 failures including unknown emails (AUTH-10), expiry and counter reset (AUTH-11), sign-out deletes session (AUTH-12)
 - [x] 3.8 GREEN: `twines/src/application/auth/{sign-in,sign-out,get-current-user}.ts`, `twines/src/infrastructure/auth/{session-token,clock}.ts` (cookie helpers are added with the HTTP routes; Clock honors `TWINES_FIXED_TODAY` only outside production)
-- [ ] 3.9 RED: `twines/tests/unit/infrastructure/http/handle.test.ts` — error → status mapping (400/401/403/404/409/429) and Origin check rejects missing or foreign origins
-- [ ] 3.10 GREEN: `twines/src/infrastructure/http/{handle,origin-check}.ts`
-- [ ] 3.11 Create `twines/src/app/api/auth/{sign-up,sign-in,sign-out}/route.ts` with httpOnly SameSite=Lax cookie (AUTH-09)
+- [x] 3.9 RED: `twines/tests/unit/infrastructure/http/handle.test.ts` — error → status mapping (400/401/403/404/409/429) and Origin check rejects missing or foreign origins
+- [x] 3.10 GREEN: `twines/src/infrastructure/http/{handle,origin-check}.ts`
+- [x] 3.11 Create `twines/src/app/api/auth/{sign-up,sign-in,sign-out}/route.ts` with httpOnly SameSite=Lax cookie (AUTH-09); the request handlers live in `twines/src/infrastructure/http/auth-handlers.ts` (a route module may only export HTTP methods), the cookie helpers in `twines/src/infrastructure/auth/session-cookie.ts` and the composition root in `twines/src/infrastructure/container.ts`
 - [ ] 3.12 Create `twines/src/app/(auth)/sign-up/page.tsx`, `twines/src/app/(auth)/sign-in/page.tsx`, `twines/src/components/forms/{sign-up-form,sign-in-form}.tsx`
 - [ ] 3.13 Create `twines/src/middleware.ts` redirecting anonymous page requests to sign-in (AUTH-13) and an authenticated layout with sign-out
 - [x] 3.14 Security hardening of the authentication use cases (from the independent verification of PR 5):
