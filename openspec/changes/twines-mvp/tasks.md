@@ -109,8 +109,8 @@ Conventions for every work unit:
 - [x] 5.4 GREEN: `twines/src/components/vehicle-health/PartDetailPanel.tsx`
 - [x] 5.5 RED: `twines/tests/component/vehicle-health/diagram-2d.test.tsx` — 8 zones colored by status, click selects part, list/selection sync (VIEW-05, VIEW-06)
 - [x] 5.6 GREEN: `twines/src/components/vehicle-health/{VehicleDiagram2D,VehicleHealthView,useWebGLSupport}.tsx`; wire `twines/src/app/vehicles/[id]/page.tsx`
-- [ ] 5.7 RED: `twines/tests/component/vehicle-health/vehicle-3d.test.tsx` — model chosen by body type (VIEW-03), hotspot buttons have accessible labels, auto-rotate off under reduced motion and when a part is selected (VIEW-07)
-- [ ] 5.8 GREEN: `twines/src/components/vehicle-health/Vehicle3D.tsx` and `twines/src/components/vehicle-health/models/{sedan,hatchback,suv,pickup}.ts`, loaded via `next/dynamic` with `ssr: false`
+- [x] 5.7 RED: `twines/tests/component/vehicle-health/vehicle-3d.test.tsx` — model chosen by body type (VIEW-03), hotspot buttons have accessible labels, auto-rotate off under reduced motion and when a part is selected (VIEW-07)
+- [x] 5.8 GREEN: `twines/src/components/vehicle-health/Vehicle3D.tsx` and `twines/src/components/vehicle-health/models/{sedan,hatchback,suv,pickup}.ts`, loaded via `next/dynamic` with `ssr: false`
 
 ## Phase 6: Technician flow, seed and end-to-end (PR 11, PR 12)
 
