@@ -15,20 +15,20 @@ describe("SystemClock", () => {
     expect(new SystemClock({}, at("2026-11-20T06:00:00Z")).today()).toBe("2026-11-20");
   });
 
-  it("honors TWINES_FIXED_TODAY outside production", () => {
-    const env = { NODE_ENV: "test", TWINES_FIXED_TODAY: "2026-06-15" };
+  it.each(["development", "test"])("honors TWINES_FIXED_TODAY when NODE_ENV is %s", (nodeEnv) => {
+    const env = { NODE_ENV: nodeEnv, TWINES_FIXED_TODAY: "2026-06-15" };
 
     expect(new SystemClock(env, at("2026-11-20T06:00:00Z")).today()).toBe("2026-06-15");
-    expect(new SystemClock({ TWINES_FIXED_TODAY: "2026-06-15" }, at("2026-11-20T06:00:00Z")).today()).toBe(
-      "2026-06-15",
-    );
   });
 
-  it("ignores TWINES_FIXED_TODAY in production", () => {
-    const env = { NODE_ENV: "production", TWINES_FIXED_TODAY: "2026-06-15" };
+  it.each([["production"], ["staging"], ["Development"], [""], [undefined]])(
+    "ignores TWINES_FIXED_TODAY unless NODE_ENV is exactly development or test (NODE_ENV=%s)",
+    (nodeEnv) => {
+      const env = { NODE_ENV: nodeEnv, TWINES_FIXED_TODAY: "2026-06-15" };
 
-    expect(new SystemClock(env, at("2026-11-20T06:00:00Z")).today()).toBe("2026-11-20");
-  });
+      expect(new SystemClock(env, at("2026-11-20T06:00:00Z")).today()).toBe("2026-11-20");
+    },
+  );
 
   it("fails loudly on a malformed fixed date instead of falling back silently", () => {
     const env = { NODE_ENV: "test", TWINES_FIXED_TODAY: "15/06/2026" };

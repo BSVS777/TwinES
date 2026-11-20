@@ -11,9 +11,13 @@ const dateFormat = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
 });
 
+/** `TWINES_FIXED_TODAY` is honored only in these environments, so production can never be pinned. */
+const FIXED_TODAY_ENVIRONMENTS = ["development", "test"];
+
 /**
- * Real clock. `today()` is the calendar date in Costa Rica. Outside production,
- * `TWINES_FIXED_TODAY` pins it so color statuses and tests are reproducible.
+ * Real clock. `today()` is the calendar date in Costa Rica. `TWINES_FIXED_TODAY` pins it so
+ * color statuses and tests are reproducible, but only when `NODE_ENV` is exactly `development`
+ * or `test`; any other value, or none, ignores it.
  */
 export class SystemClock implements Clock {
   constructor(
@@ -27,7 +31,7 @@ export class SystemClock implements Clock {
 
   today(): CalendarDate {
     const fixed = this.env.TWINES_FIXED_TODAY;
-    if (fixed && this.env.NODE_ENV !== "production") return parseCalendarDate(fixed);
+    if (fixed && FIXED_TODAY_ENVIRONMENTS.includes(this.env.NODE_ENV ?? "")) return parseCalendarDate(fixed);
     return parseCalendarDate(dateFormat.format(this.now()));
   }
 }
