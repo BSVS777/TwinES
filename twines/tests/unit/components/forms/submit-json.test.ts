@@ -28,6 +28,19 @@ describe("submitJson", () => {
     });
   });
 
+  it("sends with the given method, for edits and replacements", async () => {
+    const fetchMock = stubFetch(Response.json({ vehicle: {} }));
+
+    const result = await submitJson("/api/vehicles/v1", { make: "Mazda" }, "PATCH");
+
+    expect(result).toEqual({ ok: true });
+    expect(fetchMock).toHaveBeenCalledWith("/api/vehicles/v1", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ make: "Mazda" }),
+    });
+  });
+
   it("returns the per-field errors of a 400 or 409 response", async () => {
     stubFetch(Response.json({ errors: { email: "Enter a valid email address" } }, { status: 400 }));
     expect(await submitJson("/x", {})).toEqual({ ok: false, errors: { email: "Enter a valid email address" } });

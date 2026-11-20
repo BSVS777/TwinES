@@ -17,11 +17,13 @@ async function errorsOf(response: Response): Promise<FieldErrors> {
   return { form: typeof error === "string" ? error : GENERIC_ERROR };
 }
 
-/** Posts a JSON body to an API endpoint and turns the answer into a success or field errors. */
-export async function submitJson(path: string, body: unknown): Promise<SubmitResult> {
+export type JsonMethod = "POST" | "PUT" | "PATCH";
+
+/** Sends a JSON body to an API endpoint (POST unless told otherwise) and turns the answer into a success or field errors. */
+export async function submitJson(path: string, body: unknown, method: JsonMethod = "POST"): Promise<SubmitResult> {
   try {
     const response = await fetch(path, {
-      method: "POST",
+      method,
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     });
