@@ -1,5 +1,12 @@
 import { Conflict } from "@/application/errors";
-import type { BodyType, NewVehicle, Vehicle, VehicleChanges, VehicleRepository } from "@/application/ports";
+import type {
+  BodyType,
+  NewVehicle,
+  ServiceRecord,
+  Vehicle,
+  VehicleChanges,
+  VehicleRepository,
+} from "@/application/ports";
 import type { PartId } from "@/domain/part-health/catalog";
 import type { PartBaseline } from "@/domain/part-health/health-estimator";
 import type { CalendarDate } from "@/domain/shared/calendar-date";
@@ -113,5 +120,20 @@ export class PrismaVehicleRepository implements VehicleRepository {
       create: { vehicleId, partId, mileageKm, date },
       update: { mileageKm, date },
     });
+  }
+
+  async recordService(vehicleId: string, { baseline, currentMileageKm }: ServiceRecord): Promise<Vehicle> {
+    const { partId, mileageKm, date } = baseline;
+    // One transaction: a failed baseline write must not leave the new mileage behind. An omitted
+    // mileage leaves the column as it is.
+    await this.db.$transaction([
+      this.db.vehicle.update({ where: { id: vehicleId }, data: { currentMileageKm } }),
+      this.db.partBaseline.upsert({
+        where: { vehicleId_partId: { vehicleId, partId } },
+        create: { vehicleId, partId, mileageKm, date },
+        update: { mileageKm, date },
+      }),
+    ]);
+    return toVehicle(await this.db.vehicle.findUniqueOrThrow({ where: { id: vehicleId }, include: withBaselines }));
   }
 }

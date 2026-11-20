@@ -76,6 +76,9 @@ function vehicleFields(today: CalendarDate) {
 
 const INVALID_INPUT = { error: "Invalid input" };
 
+/** The odometer never goes back, whoever edits it (VEH-09, VEH-16). */
+export const MILEAGE_ROLLBACK_MESSAGE = "Mileage cannot be lower than the current value";
+
 /**
  * Vehicle registration input (VEH-03, VEH-04). Built per request because the latest model year
  * and the "not in the future" date both depend on today's date, which comes from the Clock.
@@ -112,6 +115,26 @@ export function baselineSchema(today: CalendarDate) {
   );
 }
 
+/**
+ * What a technician sends to record a serviced part (VEH-16): the part and, optionally, the
+ * odometer reading. Comparing the reading with the vehicle's current mileage is the use case's job.
+ */
+export function serviceSchema() {
+  return z.object(
+    {
+      partId: z.enum(PART_IDS, required("Part is required", "Part must be one of the 8 tracked parts")),
+      currentMileageKm: wholeNumber("Mileage", 0, MILEAGE_MAX).optional(),
+    },
+    INVALID_INPUT,
+  );
+}
+
+/** A plate typed into the technician search, normalized the way plates are stored (VEH-14). */
+export function plateSearchSchema() {
+  return z.string(required("Plate is required")).trim().toUpperCase().min(1, "Plate is required");
+}
+
 export type VehicleInput = z.infer<ReturnType<typeof vehicleSchema>>;
 export type VehicleUpdateInput = z.infer<ReturnType<typeof vehicleUpdateSchema>>;
 export type BaselineInput = z.infer<ReturnType<typeof baselineSchema>>;
+export type ServiceInput = z.infer<ReturnType<typeof serviceSchema>>;

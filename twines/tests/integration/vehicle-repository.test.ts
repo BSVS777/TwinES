@@ -169,4 +169,64 @@ describe("PrismaVehicleRepository", () => {
       expect(baselines.find((b) => b.partId === "tires")).toEqual(allBaselines.find((b) => b.partId === "tires"));
     });
   });
+
+  describe("recordService", () => {
+    const serviced = { partId: "engine-oil", mileageKm: 45200, date: "2026-11-19" as CalendarDate } as const;
+
+    it("saves the new mileage and replaces the part's baseline together", async () => {
+      const created = await vehicles.create(newVehicle({ baselines: allBaselines }));
+
+      const saved = await vehicles.recordService(created.id, { baseline: serviced, currentMileageKm: 45200 });
+
+      expect(saved.currentMileageKm).toBe(45200);
+      expect(saved.baselines).toHaveLength(8);
+      expect(saved.baselines.find((b) => b.partId === "engine-oil")).toEqual(serviced);
+      expect(saved.baselines.find((b) => b.partId === "tires")).toEqual(allBaselines.find((b) => b.partId === "tires"));
+      expect(await vehicles.findById(created.id)).toEqual(saved);
+    });
+
+    it("keeps the mileage as it is when none is given and adds a baseline the part did not have", async () => {
+      const created = await vehicles.create(newVehicle());
+
+      const saved = await vehicles.recordService(created.id, { baseline: serviced });
+
+      expect(saved.currentMileageKm).toBe(45000);
+      expect(saved.baselines).toEqual([serviced]);
+    });
+
+    it("leaves other vehicles alone", async () => {
+      const created = await vehicles.create(newVehicle());
+      const other = await vehicles.create(newVehicle({ plate: "XYZ-999" }));
+
+      await vehicles.recordService(created.id, { baseline: serviced, currentMileageKm: 45200 });
+
+      expect(await vehicles.findById(other.id)).toEqual(other);
+    });
+
+    it("rejects an unknown vehicle and writes nothing", async () => {
+      await expect(vehicles.recordService("missing-id", { baseline: serviced, currentMileageKm: 45200 })).rejects.toThrow();
+
+      expect(await getDb().partBaseline.count()).toBe(0);
+    });
+
+    it("saves neither the mileage nor the baseline when the baseline write fails", async () => {
+      const created = await vehicles.create(newVehicle());
+      // A trigger makes exactly this baseline write fail, after the mileage update has run.
+      await getDb().$executeRawUnsafe(
+        "CREATE TRIGGER fail_service_baseline BEFORE INSERT ON PartBaseline WHEN NEW.mileageKm = 45201 " +
+          "BEGIN SELECT RAISE(ABORT, 'baseline write refused'); END",
+      );
+
+      try {
+        await expect(
+          vehicles.recordService(created.id, { baseline: { ...serviced, mileageKm: 45201 }, currentMileageKm: 45201 }),
+        ).rejects.toThrow();
+      } finally {
+        await getDb().$executeRawUnsafe("DROP TRIGGER fail_service_baseline");
+      }
+
+      expect((await vehicles.findById(created.id))?.currentMileageKm).toBe(45000);
+      expect(await getDb().partBaseline.count()).toBe(0);
+    });
+  });
 });

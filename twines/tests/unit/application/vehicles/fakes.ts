@@ -1,5 +1,12 @@
 import { Conflict } from "@/application/errors";
-import type { NewVehicle, PublicUser, Vehicle, VehicleChanges, VehicleRepository } from "@/application/ports";
+import type {
+  NewVehicle,
+  PublicUser,
+  ServiceRecord,
+  Vehicle,
+  VehicleChanges,
+  VehicleRepository,
+} from "@/application/ports";
 import type { PartBaseline } from "@/domain/part-health/health-estimator";
 
 export { FakeClock } from "../auth/fakes";
@@ -74,6 +81,14 @@ export class InMemoryVehicleRepository implements VehicleRepository {
     const index = vehicle.baselines.findIndex((existing) => existing.partId === baseline.partId);
     if (index >= 0) vehicle.baselines[index] = { ...baseline };
     else vehicle.baselines.push({ ...baseline });
+  }
+
+  async recordService(vehicleId: string, { baseline, currentMileageKm }: ServiceRecord): Promise<Vehicle> {
+    const vehicle = this.vehicles.find((candidate) => candidate.id === vehicleId);
+    if (!vehicle) throw new Error(`No vehicle ${vehicleId}`);
+    if (currentMileageKm !== undefined) vehicle.currentMileageKm = currentMileageKm;
+    await this.upsertBaseline(vehicleId, baseline);
+    return { ...vehicle };
   }
 
   private assertPlateFree(plate: string): void {

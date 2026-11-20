@@ -118,6 +118,13 @@ export interface NewVehicle {
 /** Editable details; ownership and baselines change through their own operations. */
 export type VehicleChanges = Partial<Omit<NewVehicle, "ownerId" | "baselines">>;
 
+/** What a technician's service visit changes: one part's baseline and, optionally, the odometer. */
+export interface ServiceRecord {
+  baseline: PartBaseline;
+  /** The new odometer reading; omitted when the reading stays as it is. */
+  currentMileageKm?: number;
+}
+
 export interface VehicleRepository {
   /** Throws `Conflict` when the plate is already registered. */
   create(input: NewVehicle): Promise<Vehicle>;
@@ -132,4 +139,9 @@ export interface VehicleRepository {
   /** Removes the vehicle and its baselines. */
   delete(id: string): Promise<void>;
   upsertBaseline(vehicleId: string, baseline: PartBaseline): Promise<void>;
+  /**
+   * Applies a service visit as one unit: the new mileage, when given, and the part's baseline are
+   * both saved or neither is. Returns the vehicle as saved.
+   */
+  recordService(vehicleId: string, service: ServiceRecord): Promise<Vehicle>;
 }

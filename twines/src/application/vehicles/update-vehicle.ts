@@ -1,7 +1,7 @@
 import { Conflict, ValidationError } from "@/application/errors";
 import type { Clock, PublicUser, Vehicle, VehicleRepository } from "@/application/ports";
 import { parseInput } from "@/application/validation/parse";
-import { vehicleUpdateSchema } from "@/application/validation/vehicle";
+import { MILEAGE_ROLLBACK_MESSAGE, vehicleUpdateSchema } from "@/application/validation/vehicle";
 import { loadOwnedVehicle } from "@/application/vehicles/owned-vehicle";
 
 export interface UpdateVehicleDeps {
@@ -10,7 +10,6 @@ export interface UpdateVehicleDeps {
 }
 
 const DUPLICATE_PLATE = "This plate is already registered";
-const MILEAGE_ROLLBACK = "Mileage cannot be lower than the current value";
 
 /**
  * Edits the details of the owner's vehicle under the registration rules. The odometer never goes
@@ -27,7 +26,7 @@ export async function updateVehicle(
   const changes = parseInput(vehicleUpdateSchema(clock.today()), input);
 
   if (changes.currentMileageKm !== undefined && changes.currentMileageKm < vehicle.currentMileageKm) {
-    throw new ValidationError({ currentMileageKm: MILEAGE_ROLLBACK });
+    throw new ValidationError({ currentMileageKm: MILEAGE_ROLLBACK_MESSAGE });
   }
   if (changes.plate !== undefined && changes.plate !== vehicle.plate && (await vehicles.findByPlate(changes.plate))) {
     throw new Conflict(DUPLICATE_PLATE, "plate");
