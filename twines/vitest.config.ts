@@ -12,7 +12,20 @@ export default defineConfig({
         test: {
           name: "unit",
           environment: "node",
-          include: ["tests/unit/**/*.test.ts", "tests/integration/**/*.test.ts"],
+          include: ["tests/unit/**/*.test.ts"],
+        },
+      },
+      {
+        resolve: { alias },
+        test: {
+          name: "integration",
+          environment: "node",
+          include: ["tests/integration/**/*.test.ts"],
+          // Repositories run against a SQLite file migrated once per run (see the global setup).
+          globalSetup: ["tests/setup/integration-db.ts"],
+          env: { DATABASE_URL: "file:./test-integration.db" },
+          // All files share one database file, so they must not run concurrently.
+          fileParallelism: false,
         },
       },
       {
