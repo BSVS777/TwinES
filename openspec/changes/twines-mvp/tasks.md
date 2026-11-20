@@ -65,10 +65,10 @@ Conventions for every work unit:
 
 ## Phase 3: Persistence and authentication (PR 4, PR 5, PR 6)
 
-- [ ] 3.1 Verify Prisma 7.10.x SQLite setup in the official docs; create `twines/prisma/schema.prisma` (User, Session, LoginThrottle, Vehicle, PartBaseline) and `twines/prisma.config.ts`; run the first migration
-- [ ] 3.2 Create `twines/src/application/ports.ts` and `twines/src/application/errors.ts`
-- [ ] 3.3 RED: `twines/tests/integration/repositories.test.ts` — unique email/plate raise `Conflict`, `findByIdForOwner` misses other owners, cascade delete of baselines, session lookup by token hash
-- [ ] 3.4 GREEN: `twines/src/infrastructure/db.ts` and `twines/src/infrastructure/repositories/{user,session,login-throttle,vehicle}-repository.ts`
+- [x] 3.1 Verify Prisma 7.10.x SQLite setup in the official docs; create `twines/prisma/schema.prisma` (User, Session, LoginThrottle, Vehicle, PartBaseline) and `twines/prisma.config.ts`; run the first migration
+- [x] 3.2 Create `twines/src/application/ports.ts` and `twines/src/application/errors.ts`
+- [x] 3.3 RED: `twines/tests/integration/repositories.test.ts` — unique email/plate raise `Conflict`, `findByIdForOwner` misses other owners, cascade delete of baselines, session lookup by token hash
+- [x] 3.4 GREEN: `twines/src/infrastructure/db.ts` and `twines/src/infrastructure/repositories/{user,session,login-throttle,vehicle}-repository.ts`
 - [ ] 3.5 RED: `twines/tests/unit/application/auth/sign-up.test.ts` — lowercase email, duplicate (AUTH-02), weak password (AUTH-03), invalid email (AUTH-04), hashed password (AUTH-05), role forced to owner (AUTH-06)
 - [ ] 3.6 GREEN: `twines/src/application/validation/auth.ts`, `twines/src/application/auth/sign-up.ts`, `twines/src/infrastructure/auth/bcrypt-hasher.ts`
 - [ ] 3.7 RED: `twines/tests/unit/application/auth/sign-in.test.ts` — success (AUTH-07), identical message for wrong password and unknown email (AUTH-08), lockout after 5 failures including unknown emails (AUTH-10), expiry and counter reset (AUTH-11), sign-out deletes session (AUTH-12)
