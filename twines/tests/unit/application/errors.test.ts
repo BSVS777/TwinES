@@ -23,7 +23,7 @@ describe("application errors", () => {
     ["Unauthorized", new Unauthorized(), "Authentication required"],
     ["Forbidden", new Forbidden(), "Forbidden"],
     ["NotFound", new NotFound(), "Not found"],
-    ["TooManyAttempts", new TooManyAttempts(), "Too many attempts"],
+    ["TooManyAttempts", new TooManyAttempts(), "Too many attempts, try again later"],
   ])("%s has a default message and its own name", (name, error, message) => {
     expect(error.name).toBe(name);
     expect(error.message).toBe(message);

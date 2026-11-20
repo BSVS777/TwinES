@@ -47,6 +47,6 @@ export class Conflict extends ApplicationError {
 /** 429: sign-in is temporarily locked after repeated failures. */
 export class TooManyAttempts extends ApplicationError {
   constructor(public readonly lockedUntil?: Date) {
-    super("Too many attempts");
+    super("Too many attempts, try again later");
   }
 }

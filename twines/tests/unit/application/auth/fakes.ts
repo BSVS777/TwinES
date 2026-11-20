@@ -1,5 +1,17 @@
 import { Conflict } from "@/application/errors";
-import type { NewUser, PasswordHasher, User, UserRepository } from "@/application/ports";
+import type {
+  Clock,
+  LoginThrottle,
+  LoginThrottleStore,
+  NewSession,
+  NewUser,
+  PasswordHasher,
+  SessionStore,
+  SessionTokens,
+  User,
+  UserRepository,
+} from "@/application/ports";
+import { parseCalendarDate, type CalendarDate } from "@/domain/shared/calendar-date";
 
 /** In-memory user store that enforces the same unique-email rule as the database. */
 export class InMemoryUserRepository implements UserRepository {
@@ -29,11 +41,83 @@ export class InMemoryUserRepository implements UserRepository {
 
 /** Deterministic hasher: no real cryptography, so tests stay instant. */
 export class FakePasswordHasher implements PasswordHasher {
+  /** Every hash a password was checked against, in call order. */
+  readonly verifiedAgainst: string[] = [];
+
   async hash(plain: string): Promise<string> {
     return `hashed(${plain})`;
   }
 
   async verify(plain: string, hash: string): Promise<boolean> {
+    this.verifiedAgainst.push(hash);
     return hash === `hashed(${plain})`;
+  }
+}
+
+/** Clock the test moves by hand; `today()` is the UTC date of `now()`. */
+export class FakeClock implements Clock {
+  constructor(private current: Date = new Date("2026-03-10T12:00:00Z")) {}
+
+  now(): Date {
+    return new Date(this.current);
+  }
+
+  today(): CalendarDate {
+    return parseCalendarDate(this.current.toISOString().slice(0, 10));
+  }
+
+  advance(ms: number): void {
+    this.current = new Date(this.current.getTime() + ms);
+  }
+}
+
+/** Predictable tokens: `token-1`, `token-2`, ... and a visibly different "hash". */
+export class FakeSessionTokens implements SessionTokens {
+  private counter = 0;
+
+  generate(): string {
+    this.counter += 1;
+    return `token-${this.counter}`;
+  }
+
+  hash(token: string): string {
+    return `sha(${token})`;
+  }
+}
+
+export class InMemorySessionStore implements SessionStore {
+  readonly sessions: NewSession[] = [];
+
+  constructor(private readonly users: UserRepository) {}
+
+  async create(session: NewSession): Promise<void> {
+    this.sessions.push(session);
+  }
+
+  async findUserByTokenHash(tokenHash: string, now: Date): Promise<User | null> {
+    const session = this.sessions.find((candidate) => candidate.tokenHash === tokenHash);
+    if (!session || session.expiresAt.getTime() <= now.getTime()) return null;
+    return this.users.findById(session.userId);
+  }
+
+  async deleteByTokenHash(tokenHash: string): Promise<void> {
+    const index = this.sessions.findIndex((candidate) => candidate.tokenHash === tokenHash);
+    if (index >= 0) this.sessions.splice(index, 1);
+  }
+}
+
+export class InMemoryLoginThrottleStore implements LoginThrottleStore {
+  readonly records = new Map<string, LoginThrottle>();
+
+  async find(email: string): Promise<LoginThrottle | null> {
+    return this.records.get(email) ?? null;
+  }
+
+  async save(throttle: LoginThrottle): Promise<void> {
+    this.records.set(throttle.email, { ...throttle });
+  }
+
+  async reset(email: string): Promise<void> {
+    this.records.delete(email);
   }
 }

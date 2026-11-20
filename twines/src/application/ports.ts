@@ -15,6 +15,13 @@ export interface PasswordHasher {
   verify(plain: string, hash: string): Promise<boolean>;
 }
 
+export interface SessionTokens {
+  /** A fresh, unguessable session token. The caller stores it in the cookie. */
+  generate(): string;
+  /** One-way digest of a token. Only this digest is ever persisted. */
+  hash(token: string): string;
+}
+
 export interface User {
   id: string;
   email: string;
