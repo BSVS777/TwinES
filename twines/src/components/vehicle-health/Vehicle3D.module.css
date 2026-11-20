@@ -1,0 +1,48 @@
+.stage {
+  position: relative;
+  width: 100%;
+  max-width: 40rem;
+  aspect-ratio: 16 / 10;
+  min-height: 18rem;
+  border: 1px solid #374151;
+  border-radius: 0.5rem;
+  background: linear-gradient(#f3f4f6, #d1d5db);
+  overflow: hidden;
+}
+
+/* The real button that sits over each colored marker, for keyboard users and screen readers. */
+.hotspot {
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 2px solid rgb(255 255 255 / 85%);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.hotspot:hover {
+  border-color: #171717;
+}
+
+.hotspot[aria-pressed="true"] {
+  border: 4px solid #1d4ed8;
+}
+
+.hotspot:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+.loading {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 40rem;
+  aspect-ratio: 16 / 10;
+  min-height: 18rem;
+  margin: 0;
+  border: 1px dashed #374151;
+  border-radius: 0.5rem;
+}

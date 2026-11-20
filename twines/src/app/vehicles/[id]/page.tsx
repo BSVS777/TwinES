@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { NotFound } from "@/application/errors";
 import { getVehicleHealth } from "@/application/vehicles/get-vehicle-health";
 import { buildPartRows } from "@/components/vehicle-health/part-rows";
-import { VehicleHealthView } from "@/components/vehicle-health/VehicleHealthView";
+import { VehicleHealthWithModel } from "@/components/vehicle-health/VehicleHealthWithModel";
 import { requireUser } from "@/infrastructure/auth/current-user";
 import { getContainer } from "@/infrastructure/container";
 import styles from "../vehicles-page.module.css";
@@ -33,7 +33,7 @@ export default async function VehicleHealthPage({ params }: { params: Promise<{ 
         </div>
       )}
       {/* Only serializable details cross to the client; the owner id stays on the server. */}
-      <VehicleHealthView
+      <VehicleHealthWithModel
         vehicle={{
           plate: vehicle.plate,
           make: vehicle.make,
