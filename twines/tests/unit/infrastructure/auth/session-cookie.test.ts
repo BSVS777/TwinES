@@ -35,6 +35,23 @@ describe("session cookie", () => {
     });
   });
 
+  describe("readSessionToken with a request that already parses cookies", () => {
+    it("reads from its cookies instead of building a second request from it", () => {
+      // Next.js hands route handlers its own request class, which cannot be wrapped again.
+      const request = Object.assign(requestWithCookie("twines_session=from-header"), {
+        cookies: { get: (name: string) => (name === "twines_session" ? { value: "from-parsed-cookies" } : undefined) },
+      });
+
+      expect(readSessionToken(request)).toBe("from-parsed-cookies");
+    });
+
+    it("returns null when its parsed cookies have no session", () => {
+      const request = Object.assign(requestWithCookie(), { cookies: { get: () => undefined } });
+
+      expect(readSessionToken(request)).toBeNull();
+    });
+  });
+
   describe("setSessionCookie", () => {
     it("sets an httpOnly, SameSite=Lax cookie on the whole site for 7 days (AUTH-09)", () => {
       const response = NextResponse.json({});
