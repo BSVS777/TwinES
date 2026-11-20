@@ -85,6 +85,9 @@ Conventions for every work unit:
   - S1 sign-in passwords over 72 UTF-8 bytes fail as the generic `Unauthorized` and are counted by the throttle without calling bcrypt
   - S2 `TWINES_FIXED_TODAY` is honored only when `NODE_ENV` is exactly `development` or `test`
   - S5 `real-adapters.test.ts` asserts `getRounds(DUMMY_PASSWORD_HASH) === 12`
+- [x] 3.15 Authentication follow-ups (from the independent verification of PR 6):
+  - W-1 sign-up starts its session directly: `signUpWithSession` creates the owner, clears the email's throttle and calls the shared `startSession` helper (also used by `signIn`), so an email locked by failed attempts before the account existed no longer gets 429 right after sign-up (AUTH-01)
+  - W-2 `assertSameOrigin` compares against the optional `APP_ORIGIN` environment variable when set (for deployments behind a TLS-terminating proxy) and falls back to the request origin otherwise
 
 ## Phase 4: Vehicle registry (PR 7, PR 8)
 
