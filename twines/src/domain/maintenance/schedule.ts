@@ -52,3 +52,37 @@ export function computePartDues(vehicle: VehicleSnapshot, today: CalendarDate): 
     return dueFor(part, baseline, vehicle, today);
   });
 }
+
+export interface NextMaintenance {
+  date: CalendarDate;
+  overdue: boolean;
+  parts: PartId[];
+  estimatedMileageKm: number;
+}
+
+/** Parts due within this many days after the visit date share the same visit. */
+const GROUPING_WINDOW_DAYS = 30;
+
+/**
+ * The next recommended visit: today when anything is overdue, otherwise the earliest due date,
+ * grouping every part due within the window after it.
+ */
+export function computeNextMaintenance(
+  dues: PartDue[],
+  vehicle: VehicleSnapshot,
+  today: CalendarDate,
+): NextMaintenance {
+  if (dues.length === 0) throw new RangeError("Cannot compute the next maintenance without part dues");
+
+  const overdue = dues.some((due) => due.overdue);
+  const date = overdue
+    ? today
+    : dues.map((due) => due.effectiveDueDate).reduce((first, next) => earlier(first, next));
+  const parts = dues
+    .filter((due) => due.overdue || daysBetween(date, due.effectiveDueDate) <= GROUPING_WINDOW_DAYS)
+    .map((due) => due.partId);
+
+  const kmPerDay = vehicle.monthlyMileageKm / DAYS_PER_MONTH;
+  const estimatedMileageKm = Math.round(vehicle.currentMileageKm + kmPerDay * daysBetween(today, date));
+  return { date, overdue, parts, estimatedMileageKm };
+}

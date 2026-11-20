@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { computePartDues, type PartDue } from "@/domain/maintenance/schedule";
+import {
+  computeNextMaintenance,
+  computePartDues,
+  type PartDue,
+} from "@/domain/maintenance/schedule";
 import { MAINTENANCE_CATALOG, type PartId } from "@/domain/part-health/catalog";
 import type { PartBaseline, VehicleSnapshot } from "@/domain/part-health/health-estimator";
 import { MissingBaselineError } from "@/domain/part-health/rule-based-estimator";
@@ -126,5 +130,88 @@ describe("computePartDues", () => {
     const incomplete = vehicle(44000, 1500);
     incomplete.baselines = incomplete.baselines.filter((entry) => entry.partId !== "coolant");
     expect(() => computePartDues(incomplete, TODAY)).toThrow(MissingBaselineError);
+  });
+});
+
+function due(partId: PartId, daysFromToday: number, overdue = false): PartDue {
+  return { partId, dueMileageKm: null, effectiveDueDate: addDays(TODAY, daysFromToday), overdue };
+}
+
+describe("computeNextMaintenance", () => {
+  const v = vehicle(44000, 1500);
+
+  it("MNT-06 uses the earliest due date and groups parts within 30 days", () => {
+    const dues = [
+      due("engine-oil", 20),
+      due("oil-filter", 31),
+      due("air-filter", 74),
+      due("battery", 400),
+    ];
+    expect(computeNextMaintenance(dues, v, TODAY)).toEqual({
+      date: "2026-12-09",
+      overdue: false,
+      parts: ["engine-oil", "oil-filter"],
+      estimatedMileageKm: 45000,
+    });
+  });
+
+  it("includes a part due exactly 30 days after the visit and excludes one due 31 days after", () => {
+    const dues = [due("engine-oil", 10), due("oil-filter", 40), due("air-filter", 41)];
+    expect(computeNextMaintenance(dues, v, TODAY).parts).toEqual(["engine-oil", "oil-filter"]);
+  });
+
+  it("MNT-07 flags an overdue visit for today and includes the overdue part", () => {
+    const dues = [due("engine-oil", -3, true), due("oil-filter", 12), due("air-filter", 200)];
+    expect(computeNextMaintenance(dues, v, TODAY)).toEqual({
+      date: TODAY,
+      overdue: true,
+      parts: ["engine-oil", "oil-filter"],
+      estimatedMileageKm: 44000,
+    });
+  });
+
+  it("MNT-07 groups parts within 30 days of today, not of the overdue part's date", () => {
+    const dues = [due("engine-oil", -90, true), due("oil-filter", 30), due("air-filter", 31)];
+    expect(computeNextMaintenance(dues, v, TODAY).parts).toEqual(["engine-oil", "oil-filter"]);
+  });
+
+  it("includes an overdue-by-mileage part whose due date is in the far future", () => {
+    const dues = [due("engine-oil", 160, true), due("oil-filter", 5)];
+    const next = computeNextMaintenance(dues, v, TODAY);
+    expect(next.overdue).toBe(true);
+    expect(next.parts).toEqual(["engine-oil", "oil-filter"]);
+  });
+
+  it("estimates the visit mileage from the monthly rate and rounds to the nearest km", () => {
+    const monthly = vehicle(44000, 1000);
+    expect(computeNextMaintenance([due("engine-oil", 10)], monthly, TODAY).estimatedMileageKm).toBe(44333);
+    expect(computeNextMaintenance([due("engine-oil", 20)], monthly, TODAY).estimatedMileageKm).toBe(44667);
+  });
+
+  it("keeps the estimated mileage at the current mileage when monthly mileage is zero", () => {
+    const parked = vehicle(44000, 0);
+    expect(computeNextMaintenance([due("engine-oil", 90)], parked, TODAY).estimatedMileageKm).toBe(44000);
+  });
+
+  it("throws when there are no part dues to schedule", () => {
+    expect(() => computeNextMaintenance([], v, TODAY)).toThrow(RangeError);
+  });
+
+  it("MNT-08 recomputes from the remaining parts and the new engine oil baseline", () => {
+    const before = vehicle(44000, 1500, { "engine-oil": OIL_40K });
+    const first = computeNextMaintenance(computePartDues(before, TODAY), before, TODAY);
+    expect(first).toEqual({
+      date: "2026-12-09",
+      overdue: false,
+      parts: ["engine-oil"],
+      estimatedMileageKm: 45000,
+    });
+
+    const serviced = vehicle(44000, 1500, { "engine-oil": { mileageKm: 44000, date: TODAY } });
+    const second = computeNextMaintenance(computePartDues(serviced, TODAY), serviced, TODAY);
+    expect(second.date).toBe(addDays(TODAY, 100));
+    expect(second.overdue).toBe(false);
+    expect(second.parts).toEqual(["engine-oil", "oil-filter"]);
+    expect(second.estimatedMileageKm).toBe(49000);
   });
 });
