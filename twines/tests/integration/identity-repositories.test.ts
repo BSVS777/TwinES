@@ -116,4 +116,84 @@ describe("PrismaLoginThrottleStore", () => {
     expect(await throttles.find("ana@example.com")).toBeNull();
     expect((await throttles.find("bob@example.com"))?.failedCount).toBe(4);
   });
+
+  describe("recordFailure", () => {
+    const now = new Date("2026-11-19T12:00:00.000Z");
+    const minutes = (count: number) => new Date(now.getTime() + count * 60 * 1000);
+
+    it("creates the record on the first failure and then increments it", async () => {
+      expect(await throttles.recordFailure("ana@example.com", now)).toEqual({
+        email: "ana@example.com",
+        failedCount: 1,
+        lockedUntil: null,
+      });
+      expect(await throttles.recordFailure("ana@example.com", now)).toEqual({
+        email: "ana@example.com",
+        failedCount: 2,
+        lockedUntil: null,
+      });
+      expect(await throttles.find("ana@example.com")).toEqual({
+        email: "ana@example.com",
+        failedCount: 2,
+        lockedUntil: null,
+      });
+    });
+
+    it("locks for 15 minutes when the count reaches 5 and not before", async () => {
+      for (let i = 0; i < 4; i += 1) {
+        expect((await throttles.recordFailure("ana@example.com", now)).lockedUntil).toBeNull();
+      }
+
+      expect(await throttles.recordFailure("ana@example.com", now)).toEqual({
+        email: "ana@example.com",
+        failedCount: 5,
+        lockedUntil: minutes(15),
+      });
+      expect(await throttles.find("ana@example.com")).toEqual({
+        email: "ana@example.com",
+        failedCount: 5,
+        lockedUntil: minutes(15),
+      });
+    });
+
+    it("counts an expired lock as zero: the next failure starts a fresh count", async () => {
+      await throttles.save({ email: "ana@example.com", failedCount: 5, lockedUntil: minutes(15) });
+
+      expect(await throttles.recordFailure("ana@example.com", minutes(15))).toEqual({
+        email: "ana@example.com",
+        failedCount: 1,
+        lockedUntil: null,
+      });
+    });
+
+    it("keeps counting while the lock is still active", async () => {
+      await throttles.save({ email: "ana@example.com", failedCount: 5, lockedUntil: minutes(15) });
+
+      const next = await throttles.recordFailure("ana@example.com", minutes(14));
+
+      expect(next.failedCount).toBe(6);
+      expect(next.lockedUntil).not.toBeNull();
+    });
+
+    it("does not lose any of 10 concurrent failures for one email", async () => {
+      const results = await Promise.all(
+        Array.from({ length: 10 }, () => throttles.recordFailure("ana@example.com", now)),
+      );
+
+      expect((await throttles.find("ana@example.com"))?.failedCount).toBe(10);
+      expect(results.map((result) => result.failedCount).sort((a, b) => a - b)).toEqual([
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+      ]);
+      expect((await throttles.find("ana@example.com"))?.lockedUntil).not.toBeNull();
+    });
+
+    it("keeps failures of different emails apart", async () => {
+      await throttles.recordFailure("ana@example.com", now);
+      await throttles.recordFailure("ana@example.com", now);
+      await throttles.recordFailure("bob@example.com", now);
+
+      expect((await throttles.find("ana@example.com"))?.failedCount).toBe(2);
+      expect((await throttles.find("bob@example.com"))?.failedCount).toBe(1);
+    });
+  });
 });

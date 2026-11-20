@@ -12,6 +12,7 @@
 | Chain strategy | stacked-to-main |
 
 Decision needed before apply: No
+PR 5c merged with maintainer-approved size:exception (533 lines, 77% tests).
 Chained PRs recommended: Yes
 Chain strategy: stacked-to-main
 400-line budget risk: High
@@ -78,6 +79,12 @@ Conventions for every work unit:
 - [ ] 3.11 Create `twines/src/app/api/auth/{sign-up,sign-in,sign-out}/route.ts` with httpOnly SameSite=Lax cookie (AUTH-09)
 - [ ] 3.12 Create `twines/src/app/(auth)/sign-up/page.tsx`, `twines/src/app/(auth)/sign-in/page.tsx`, `twines/src/components/forms/{sign-up-form,sign-in-form}.tsx`
 - [ ] 3.13 Create `twines/src/middleware.ts` redirecting anonymous page requests to sign-in (AUTH-13) and an authenticated layout with sign-out
+- [x] 3.14 Security hardening of the authentication use cases (from the independent verification of PR 5):
+  - W1 atomic lockout: `LoginThrottleStore.recordFailure(email, now)` increments and locks in one atomic operation; sign-in uses it; integration test with 10 concurrent failures ends at `failedCount` 10
+  - W2 `PublicUser { id, email, role }` is what `signUp`, `signIn` and `getCurrentUser` return; no `passwordHash` leaves the application layer
+  - S1 sign-in passwords over 72 UTF-8 bytes fail as the generic `Unauthorized` and are counted by the throttle without calling bcrypt
+  - S2 `TWINES_FIXED_TODAY` is honored only when `NODE_ENV` is exactly `development` or `test`
+  - S5 `real-adapters.test.ts` asserts `getRounds(DUMMY_PASSWORD_HASH) === 12`
 
 ## Phase 4: Vehicle registry (PR 7, PR 8)
 

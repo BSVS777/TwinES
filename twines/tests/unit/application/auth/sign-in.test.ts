@@ -52,7 +52,7 @@ describe("signIn", () => {
       const result = await signIn(deps, { email: EMAIL, password: PASSWORD });
 
       expect(result.token).toBe("token-1");
-      expect(result.user.email).toBe(EMAIL);
+      expect(result.user).toEqual({ id: "user-1", email: EMAIL, role: "owner" });
       expect(result.expiresAt).toEqual(new Date(clock.now().getTime() + SESSION_TTL_MS));
     });
 
@@ -62,6 +62,13 @@ describe("signIn", () => {
       expect(sessions.sessions).toEqual([{ tokenHash: "sha(token-1)", userId: "user-1", expiresAt }]);
       expect(JSON.stringify(sessions.sessions)).not.toContain(`"${token}"`);
       expect(SESSION_TTL_MS).toBe(7 * 24 * 60 * 60 * 1000);
+    });
+
+    it("never exposes the password hash on the signed-in user", async () => {
+      const { user } = await signIn(deps, { email: EMAIL, password: PASSWORD });
+
+      expect(user).not.toHaveProperty("passwordHash");
+      expect(JSON.stringify(user)).not.toContain("hashed(");
     });
 
     it("is case-insensitive on the email", async () => {
@@ -182,6 +189,60 @@ describe("signIn", () => {
     });
   });
 
+  describe("concurrent guesses", () => {
+    it("counts every parallel failure, so a burst of guesses cannot slip under the limit", async () => {
+      const slowHasher = new FakePasswordHasher();
+      const verify = slowHasher.verify.bind(slowHasher);
+      slowHasher.verify = async (plain, hash) => {
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        return verify(plain, hash);
+      };
+      deps = { ...deps, hasher: slowHasher };
+
+      const attempts = Array.from({ length: 10 }, (_, i) =>
+        signIn(deps, { email: EMAIL, password: `wrong-guess-${i}` }).catch((e: unknown) => e),
+      );
+      await Promise.all(attempts);
+
+      expect(throttles.records.get(EMAIL)?.failedCount).toBe(10);
+      await expect(signIn(deps, { email: EMAIL, password: PASSWORD })).rejects.toBeInstanceOf(TooManyAttempts);
+    });
+  });
+
+  describe("passwords over the 72-byte bcrypt limit", () => {
+    const tooLong = `${"a".repeat(72)}1`;
+
+    it("fails as the generic Unauthorized without calling the hasher", async () => {
+      const error = await signIn(deps, { email: EMAIL, password: tooLong }).catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(Unauthorized);
+      expect((error as Error).message).toBe("Invalid email or password");
+      expect(hasher.verifiedAgainst).toHaveLength(0);
+      expect(sessions.sessions).toHaveLength(0);
+    });
+
+    it("counts toward the lockout like any other failure", async () => {
+      for (let i = 0; i < MAX_FAILED_ATTEMPTS; i += 1) {
+        await expect(signIn(deps, { email: EMAIL, password: tooLong })).rejects.toBeInstanceOf(Unauthorized);
+      }
+
+      expect(throttles.records.get(EMAIL)?.failedCount).toBe(5);
+      await expect(signIn(deps, { email: EMAIL, password: PASSWORD })).rejects.toBeInstanceOf(TooManyAttempts);
+    });
+
+    it("measures bytes, not characters: 37 two-byte characters are over the limit", async () => {
+      await expect(signIn(deps, { email: EMAIL, password: "é".repeat(37) })).rejects.toBeInstanceOf(Unauthorized);
+
+      expect(hasher.verifiedAgainst).toHaveLength(0);
+    });
+
+    it("still checks a password of exactly 72 bytes", async () => {
+      await expect(signIn(deps, { email: EMAIL, password: "a".repeat(72) })).rejects.toBeInstanceOf(Unauthorized);
+
+      expect(hasher.verifiedAgainst).toEqual([`hashed(${PASSWORD})`]);
+    });
+  });
+
   describe("AUTH-11 lockout expiry and reset", () => {
     it("evaluates the attempt normally once the lock has passed", async () => {
       await failTimes(5);
@@ -232,7 +293,8 @@ describe("signIn", () => {
 
       const current = await getCurrentUser(deps, token);
 
-      expect(current?.email).toBe(EMAIL);
+      expect(current).toEqual({ id: "user-1", email: EMAIL, role: "owner" });
+      expect(current).not.toHaveProperty("passwordHash");
     });
 
     it("deletes the session on sign-out so the old token is unauthenticated", async () => {

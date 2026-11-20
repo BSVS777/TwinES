@@ -1,4 +1,5 @@
-import type { Clock, SessionStore, SessionTokens, User } from "@/application/ports";
+import { toPublicUser } from "@/application/auth/public-user";
+import type { Clock, PublicUser, SessionStore, SessionTokens } from "@/application/ports";
 
 export interface GetCurrentUserDeps {
   sessions: SessionStore;
@@ -10,7 +11,8 @@ export interface GetCurrentUserDeps {
 export async function getCurrentUser(
   { sessions, tokens, clock }: GetCurrentUserDeps,
   token: string | null | undefined,
-): Promise<User | null> {
+): Promise<PublicUser | null> {
   if (!token) return null;
-  return sessions.findUserByTokenHash(tokens.hash(token), clock.now());
+  const user = await sessions.findUserByTokenHash(tokens.hash(token), clock.now());
+  return user ? toPublicUser(user) : null;
 }

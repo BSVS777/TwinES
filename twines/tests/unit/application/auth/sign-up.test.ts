@@ -27,7 +27,15 @@ describe("signUp", () => {
     expect(user.email).toBe("ana@example.com");
     expect(user.role).toBe("owner");
     expect(users.users).toHaveLength(1);
-    expect(await users.findByEmail("ana@example.com")).toEqual(user);
+    expect(await users.findByEmail("ana@example.com")).toMatchObject({ id: user.id, email: user.email });
+  });
+
+  it("returns only the public fields, never the password hash", async () => {
+    const user = await signUp(deps, { email: "ana@example.com", password: "secret123" });
+
+    expect(user).toEqual({ id: "user-1", email: "ana@example.com", role: "owner" });
+    expect(user).not.toHaveProperty("passwordHash");
+    expect(JSON.stringify(user)).not.toContain("hashed(");
   });
 
   it("AUTH-02 rejects a duplicate email regardless of letter case", async () => {

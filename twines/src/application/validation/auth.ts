@@ -1,7 +1,12 @@
 import { z } from "zod";
 
-const MAX_PASSWORD_BYTES = 72; // bcrypt ignores everything past 72 bytes.
+/** bcrypt ignores everything past 72 bytes, so longer passwords are refused. */
+export const MAX_PASSWORD_BYTES = 72;
 const utf8 = new TextEncoder();
+
+export function exceedsPasswordLimit(password: string): boolean {
+  return utf8.encode(password).length > MAX_PASSWORD_BYTES;
+}
 
 const email = z
   .string({ error: "Email is required" })
@@ -14,7 +19,7 @@ const newPassword = z
   .refine((value) => value.length >= 8 && /[A-Za-z]/.test(value) && /\d/.test(value), {
     error: "Password must have at least 8 characters, including a letter and a digit",
   })
-  .refine((value) => utf8.encode(value).length <= MAX_PASSWORD_BYTES, {
+  .refine((value) => !exceedsPasswordLimit(value), {
     error: `Password must be at most ${MAX_PASSWORD_BYTES} bytes long`,
   });
 

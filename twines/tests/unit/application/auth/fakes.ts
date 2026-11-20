@@ -11,6 +11,7 @@ import type {
   User,
   UserRepository,
 } from "@/application/ports";
+import { LOCK_DURATION_MS, MAX_FAILED_ATTEMPTS } from "@/application/auth/sign-in";
 import { parseCalendarDate, type CalendarDate } from "@/domain/shared/calendar-date";
 
 /** In-memory user store that enforces the same unique-email rule as the database. */
@@ -115,6 +116,17 @@ export class InMemoryLoginThrottleStore implements LoginThrottleStore {
 
   async save(throttle: LoginThrottle): Promise<void> {
     this.records.set(throttle.email, { ...throttle });
+  }
+
+  async recordFailure(email: string, now: Date): Promise<LoginThrottle> {
+    const current = this.records.get(email);
+    const lockExpired = current?.lockedUntil != null && current.lockedUntil <= now;
+    const failedCount = (current && !lockExpired ? current.failedCount : 0) + 1;
+    const lockedUntil =
+      failedCount >= MAX_FAILED_ATTEMPTS ? new Date(now.getTime() + LOCK_DURATION_MS) : null;
+    const updated = { email, failedCount, lockedUntil };
+    this.records.set(email, updated);
+    return { ...updated };
   }
 
   async reset(email: string): Promise<void> {

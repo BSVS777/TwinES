@@ -30,6 +30,13 @@ export interface User {
   createdAt: Date;
 }
 
+/** The part of a user that may leave the application layer. It never carries the password hash. */
+export interface PublicUser {
+  id: string;
+  email: string;
+  role: Role;
+}
+
 export interface NewUser {
   email: string;
   passwordHash: string;
@@ -68,6 +75,12 @@ export interface LoginThrottleStore {
   find(email: string): Promise<LoginThrottle | null>;
   /** Creates or replaces the record for `throttle.email`. */
   save(throttle: LoginThrottle): Promise<void>;
+  /**
+   * Registers one failed attempt atomically and returns the resulting record. The count goes up
+   * by one (an expired lock counts as zero first) and `lockedUntil` is set to `now` plus the
+   * lock duration once the count reaches the limit. Concurrent calls never lose an increment.
+   */
+  recordFailure(email: string, now: Date): Promise<LoginThrottle>;
   /** Removes the record; a no-op when none exists. */
   reset(email: string): Promise<void>;
 }

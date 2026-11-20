@@ -1,3 +1,4 @@
+import { getRounds } from "bcryptjs";
 import { describe, expect, it } from "vitest";
 import { signIn, DUMMY_PASSWORD_HASH } from "@/application/auth/sign-in";
 import { signUp } from "@/application/auth/sign-up";
@@ -13,6 +14,7 @@ describe("auth use cases with the real hasher and token adapters", () => {
     const hasher = new BcryptPasswordHasher(4);
 
     expect(DUMMY_PASSWORD_HASH).toMatch(/^\$2b\$12\$[./A-Za-z0-9]{53}$/);
+    expect(getRounds(DUMMY_PASSWORD_HASH)).toBe(12);
     await expect(hasher.verify("secret123", DUMMY_PASSWORD_HASH)).resolves.toBe(false);
   });
 

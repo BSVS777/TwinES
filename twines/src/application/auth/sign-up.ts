@@ -1,5 +1,6 @@
 import { Conflict } from "@/application/errors";
-import type { PasswordHasher, User, UserRepository } from "@/application/ports";
+import { toPublicUser } from "@/application/auth/public-user";
+import type { PasswordHasher, PublicUser, UserRepository } from "@/application/ports";
 import { signUpSchema } from "@/application/validation/auth";
 import { parseInput } from "@/application/validation/parse";
 
@@ -14,7 +15,7 @@ const DUPLICATE_EMAIL = "An account with this email already exists";
  * Creates an owner account. The role is fixed here, never read from the input, so public
  * sign-up cannot produce technicians (AUTH-06).
  */
-export async function signUp({ users, hasher }: SignUpDeps, input: unknown): Promise<User> {
+export async function signUp({ users, hasher }: SignUpDeps, input: unknown): Promise<PublicUser> {
   const { email, password } = parseInput(signUpSchema, input);
 
   if (await users.findByEmail(email)) {
@@ -22,7 +23,8 @@ export async function signUp({ users, hasher }: SignUpDeps, input: unknown): Pro
   }
 
   try {
-    return await users.create({ email, passwordHash: await hasher.hash(password), role: "owner" });
+    const user = await users.create({ email, passwordHash: await hasher.hash(password), role: "owner" });
+    return toPublicUser(user);
   } catch (error) {
     // A concurrent sign-up can win the race between the lookup and the insert.
     if (error instanceof Conflict) throw new Conflict(DUPLICATE_EMAIL, "email");
