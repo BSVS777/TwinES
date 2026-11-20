@@ -97,3 +97,20 @@ export async function signInUi(page: Page, account: Account, landing: string | R
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(landing);
 }
+
+/** The id of the owner's own vehicle with `plate` (read from the owner's list). */
+export async function ownVehicleId(request: APIRequestContext, plate: string): Promise<string> {
+  const response = await send(request, "GET", "/api/vehicles");
+  expect(response.status(), "vehicle list").toBe(200);
+  const { vehicles } = (await response.json()) as { vehicles: { id: string; plate: string }[] };
+  const found = vehicles.find((vehicle) => vehicle.plate === plate);
+  if (!found) throw new Error(`No vehicle ${plate} in the owner's list`);
+  return found.id;
+}
+
+/** Opens the health page of the owner's vehicle with `plate` and waits for hydration. */
+export async function openOwnVehicle(page: Page, plate: string): Promise<string> {
+  const id = await ownVehicleId(page.context().request, plate);
+  await open(page, `/vehicles/${id}`);
+  return id;
+}
