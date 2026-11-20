@@ -147,7 +147,7 @@ All paths are new (greenfield) under `twines/` unless noted.
 | `twines/src/app/api/auth/{sign-up,sign-in,sign-out}/route.ts` | Create | Auth endpoints |
 | `twines/src/app/api/vehicles/route.ts`, `[id]/route.ts`, `[id]/baselines/route.ts` | Create | Vehicle endpoints |
 | `twines/src/app/api/technician/vehicles/route.ts`, `[id]/service/route.ts` | Create | Technician endpoints |
-| `twines/src/middleware.ts` | Create | Redirects anonymous page requests to sign-in (fast path; real checks stay in use cases) |
+| `twines/src/proxy.ts` | Create | Next.js 16 name for middleware. Redirects anonymous page requests to sign-in (fast path; real checks stay in use cases) |
 | `twines/src/components/forms/*.tsx` | Create | Sign-up, sign-in, vehicle, baseline forms |
 | `twines/src/components/vehicle-health/{VehicleHealthView,PartList,PartDetailPanel,HealthSummary}.tsx` | Create | Health view |
 | `twines/src/components/vehicle-health/{Vehicle3D,VehicleDiagram2D,useWebGLSupport}.tsx` | Create | 3D and 2D renderings |

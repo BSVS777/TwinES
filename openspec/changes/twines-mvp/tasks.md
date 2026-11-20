@@ -33,7 +33,7 @@ Conventions for every work unit:
 | 3 | Maintenance schedule (MNT-01..08) | PR 3 | `npx vitest run tests/unit/domain/maintenance` | N/A — pure domain library | `src/domain/maintenance` |
 | 4 | Persistence: Prisma schema, repositories | PR 4 | `npx vitest run tests/integration` | `npx prisma migrate dev` creates `dev.db` | `prisma/`, `src/infrastructure/repositories`, `src/infrastructure/db.ts` |
 | 5 | Auth use cases, hashing, sessions, throttling | PR 5 | `npx vitest run tests/unit/application/auth` | N/A — exercised through fakes; HTTP comes in PR 6 | `src/application/auth`, ports, errors, auth adapters |
-| 6 | Auth HTTP, pages, middleware | PR 6 | `npx vitest run tests/unit/infrastructure/http` + manual sign-up/sign-in | `npm run dev`: sign up, sign in, sign out in the browser | `src/app/(auth)`, `src/app/api/auth`, `src/middleware.ts`, `src/infrastructure/http` |
+| 6 | Auth HTTP, pages, proxy | PR 6 | `npx vitest run tests/unit/infrastructure/http` + manual sign-up/sign-in | `npm run dev`: sign up, sign in, sign out in the browser | `src/app/(auth)`, `src/app/api/auth`, `src/proxy.ts`, `src/infrastructure/http` |
 | 7 | Vehicle use cases and validation | PR 7 | `npx vitest run tests/unit/application/vehicles tests/unit/application/validation` | N/A — exercised through fakes | `src/application/vehicles`, `src/application/validation/vehicle*` |
 | 8 | Vehicle API and owner pages | PR 8 | `npx vitest run tests/component/forms` + manual CRUD | `npm run dev`: register, edit, delete a vehicle | `src/app/vehicles` (except `[id]` health), `src/app/api/vehicles`, `src/components/forms/vehicle*` |
 | 9 | Health view: summary, list, panel, 2D diagram | PR 9 | `npx vitest run tests/component/vehicle-health` | `npm run dev`: open a vehicle page | `src/components/vehicle-health` (non-3D), `src/app/vehicles/[id]/page.tsx` |
@@ -77,8 +77,8 @@ Conventions for every work unit:
 - [x] 3.9 RED: `twines/tests/unit/infrastructure/http/handle.test.ts` — error → status mapping (400/401/403/404/409/429) and Origin check rejects missing or foreign origins
 - [x] 3.10 GREEN: `twines/src/infrastructure/http/{handle,origin-check}.ts`
 - [x] 3.11 Create `twines/src/app/api/auth/{sign-up,sign-in,sign-out}/route.ts` with httpOnly SameSite=Lax cookie (AUTH-09); the request handlers live in `twines/src/infrastructure/http/auth-handlers.ts` (a route module may only export HTTP methods), the cookie helpers in `twines/src/infrastructure/auth/session-cookie.ts` and the composition root in `twines/src/infrastructure/container.ts`
-- [ ] 3.12 Create `twines/src/app/(auth)/sign-up/page.tsx`, `twines/src/app/(auth)/sign-in/page.tsx`, `twines/src/components/forms/{sign-up-form,sign-in-form}.tsx`
-- [ ] 3.13 Create `twines/src/middleware.ts` redirecting anonymous page requests to sign-in (AUTH-13) and an authenticated layout with sign-out
+- [x] 3.12 Create `twines/src/app/(auth)/sign-up/page.tsx`, `twines/src/app/(auth)/sign-in/page.tsx`, `twines/src/components/forms/{sign-up-form,sign-in-form}.tsx`
+- [x] 3.13 Create `twines/src/proxy.ts` (Next.js 16 renamed the `middleware.ts` convention to `proxy.ts`) redirecting anonymous page requests to sign-in (AUTH-13), and an authenticated layout with sign-out (`twines/src/app/vehicles/layout.tsx` using `twines/src/components/auth/app-shell.tsx`)
 - [x] 3.14 Security hardening of the authentication use cases (from the independent verification of PR 5):
   - W1 atomic lockout: `LoginThrottleStore.recordFailure(email, now)` increments and locks in one atomic operation; sign-in uses it; integration test with 10 concurrent failures ends at `failedCount` 10
   - W2 `PublicUser { id, email, role }` is what `signUp`, `signIn` and `getCurrentUser` return; no `passwordHash` leaves the application layer
