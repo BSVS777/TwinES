@@ -1,0 +1,30 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.swatch {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  border: 2px solid var(--foreground);
+  border-radius: 0.25rem;
+}
+
+.swatch[data-status="green"] {
+  background: var(--status-green);
+}
+
+.swatch[data-status="yellow"] {
+  background: var(--status-yellow);
+}
+
+.swatch[data-status="orange"] {
+  background: var(--status-orange);
+}
+
+.swatch[data-status="red"] {
+  background: var(--status-red);
+}

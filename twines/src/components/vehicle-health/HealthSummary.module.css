@@ -1,0 +1,52 @@
+.summary {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.plate {
+  margin: 0;
+  letter-spacing: 0.03em;
+}
+
+.vehicle {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.next {
+  margin: 0.75rem 0 0;
+  font-size: 1.125rem;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  margin: 0;
+}
+
+.facts dt {
+  color: #4b5563;
+  font-size: 0.875rem;
+}
+
+.facts dd {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.overdue {
+  padding: 0.1rem 0.5rem;
+  color: var(--status-red-text);
+  background: var(--status-red);
+  border-radius: 0.25rem;
+}
+
+.notice {
+  margin: 0.5rem 0 0;
+  color: #4b5563;
+  font-size: 0.875rem;
+}
