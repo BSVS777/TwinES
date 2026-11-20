@@ -1,0 +1,125 @@
+.diagram {
+  display: block;
+  width: 100%;
+  max-width: 40rem;
+  height: auto;
+}
+
+.body {
+  fill: #e5e7eb;
+  stroke: #374151;
+  stroke-width: 2;
+}
+
+.callout {
+  fill: #ffffff;
+  stroke: #374151;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.leader {
+  stroke: #374151;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.wheel {
+  fill: #9ca3af;
+  stroke: #374151;
+  stroke-width: 2;
+}
+
+.caption {
+  fill: var(--foreground);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+.zone {
+  cursor: pointer;
+  outline: none;
+}
+
+.shape {
+  stroke: var(--foreground);
+  stroke-width: 2;
+}
+
+.ring {
+  fill: none;
+  stroke-width: 12;
+}
+
+.halo {
+  fill: none;
+  stroke: #1d4ed8;
+  stroke-width: 4;
+  pointer-events: none;
+}
+
+.tileText {
+  font-size: 10px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+/* Zone colors come from the shared status variables; text on a tile uses its paired text color. */
+.zone[data-status="green"] .shape {
+  fill: var(--status-green);
+}
+
+.zone[data-status="yellow"] .shape {
+  fill: var(--status-yellow);
+}
+
+.zone[data-status="orange"] .shape {
+  fill: var(--status-orange);
+}
+
+.zone[data-status="red"] .shape {
+  fill: var(--status-red);
+}
+
+.zone[data-status="green"] .ring {
+  stroke: var(--status-green);
+}
+
+.zone[data-status="yellow"] .ring {
+  stroke: var(--status-yellow);
+}
+
+.zone[data-status="orange"] .ring {
+  stroke: var(--status-orange);
+}
+
+.zone[data-status="red"] .ring {
+  stroke: var(--status-red);
+}
+
+.zone[data-status="green"] .tileText {
+  fill: var(--status-green-text);
+}
+
+.zone[data-status="yellow"] .tileText {
+  fill: var(--status-yellow-text);
+}
+
+.zone[data-status="orange"] .tileText {
+  fill: var(--status-orange-text);
+}
+
+.zone[data-status="red"] .tileText {
+  fill: var(--status-red-text);
+}
+
+/* The selected zone gets a thick blue outline; keyboard focus adds a separate focus ring. */
+.zone[aria-pressed="true"] .shape {
+  stroke: #1d4ed8;
+  stroke-width: 5;
+}
+
+.zone:focus-visible {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
