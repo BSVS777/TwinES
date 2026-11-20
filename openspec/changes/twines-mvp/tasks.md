@@ -51,17 +51,17 @@ Conventions for every work unit:
 
 ## Phase 2: Domain rules (PR 2, PR 3)
 
-- [ ] 2.1 RED: `twines/tests/unit/domain/shared/calendar-date.test.ts` — parse/validate `YYYY-MM-DD`, `addDays` across month/year ends, `daysBetween`
-- [ ] 2.2 GREEN: `twines/src/domain/shared/calendar-date.ts`
-- [ ] 2.3 RED: `twines/tests/unit/domain/part-health/catalog.test.ts` — exactly 8 parts with spec intervals (HLT-01)
-- [ ] 2.4 GREEN: `twines/src/domain/part-health/catalog.ts`
-- [ ] 2.5 RED: `twines/tests/unit/domain/part-health/status.test.ts` — boundary table 0.4999/0.50/0.7499/0.75/0.9999/1.00/2.5 (HLT-06) and worst status (HLT-09)
-- [ ] 2.6 GREEN: `twines/src/domain/part-health/status.ts`
-- [ ] 2.7 RED: `twines/tests/unit/domain/part-health/rule-based-estimator.test.ts` — km dominates, time dominates, time-only battery, just serviced, remaining and overdue values (HLT-02..05, HLT-07, HLT-08)
-- [ ] 2.8 GREEN: `twines/src/domain/part-health/health-estimator.ts` (port + types) and `twines/src/domain/part-health/rule-based-estimator.ts`; export a default estimator factory (HLT-10)
+- [x] 2.1 RED: `twines/tests/unit/domain/shared/calendar-date.test.ts` — parse/validate `YYYY-MM-DD`, `addDays` across month/year ends, `daysBetween`
+- [x] 2.2 GREEN: `twines/src/domain/shared/calendar-date.ts`
+- [x] 2.3 RED: `twines/tests/unit/domain/part-health/catalog.test.ts` — exactly 8 parts with spec intervals (HLT-01)
+- [x] 2.4 GREEN: `twines/src/domain/part-health/catalog.ts`
+- [x] 2.5 RED: `twines/tests/unit/domain/part-health/status.test.ts` — boundary table 0.4999/0.50/0.7499/0.75/0.9999/1.00/2.5 (HLT-06) and worst status (HLT-09)
+- [x] 2.6 GREEN: `twines/src/domain/part-health/status.ts`
+- [x] 2.7 RED: `twines/tests/unit/domain/part-health/rule-based-estimator.test.ts` — km dominates, time dominates, time-only battery, just serviced, remaining and overdue values (HLT-02..05, HLT-07, HLT-08)
+- [x] 2.8 GREEN: `twines/src/domain/part-health/health-estimator.ts` (port + types) and `twines/src/domain/part-health/rule-based-estimator.ts`; export a default estimator factory (HLT-10)
 - [ ] 2.9 RED: `twines/tests/unit/domain/maintenance/schedule.test.ts` — due mileage/dates (MNT-01), zero monthly mileage (MNT-02), time-only (MNT-03), overdue by km and date (MNT-04/05), next maintenance grouping and estimated km (MNT-06), overdue visit (MNT-07), recompute after new baseline (MNT-08)
 - [ ] 2.10 GREEN: `twines/src/domain/maintenance/schedule.ts` (`computePartDues`, `computeNextMaintenance`)
-- [ ] 2.11 REFACTOR: confirm `src/domain` has no framework imports; coverage for `src/domain` ≥ 95%
+- [x] 2.11 REFACTOR: confirm `src/domain` has no framework imports; coverage for `src/domain` ≥ 95%
 
 ## Phase 3: Persistence and authentication (PR 4, PR 5, PR 6)
 
