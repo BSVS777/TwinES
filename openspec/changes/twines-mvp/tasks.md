@@ -13,6 +13,7 @@
 
 Decision needed before apply: No
 PR 5c merged with maintainer-approved size:exception (533 lines, 77% tests).
+Maintainer-approved size:exception (test-driven overage) for PRs 5c, 6d, 7b, 7c, 8a, 8b, 8c; standing rule: slices over 400 only because of tests are auto-approved.
 Chained PRs recommended: Yes
 Chain strategy: stacked-to-main
 400-line budget risk: High
@@ -102,12 +103,12 @@ Conventions for every work unit:
 
 ## Phase 5: Health view (PR 9, PR 10)
 
-- [ ] 5.1 RED: `twines/tests/component/vehicle-health/part-list.test.tsx` — 8 items with name, text status, usage % (VIEW-02)
-- [ ] 5.2 GREEN: `twines/src/components/vehicle-health/PartList.tsx` and `HealthSummary.tsx` (details, overall status, next maintenance, generic-intervals notice: VIEW-01)
-- [ ] 5.3 RED: `twines/tests/component/vehicle-health/part-detail-panel.test.tsx` — shows status, %, remaining km/days, due date; "Mark as serviced" only for technicians (VIEW-08/09)
-- [ ] 5.4 GREEN: `twines/src/components/vehicle-health/PartDetailPanel.tsx`
-- [ ] 5.5 RED: `twines/tests/component/vehicle-health/diagram-2d.test.tsx` — 8 zones colored by status, click selects part, list/selection sync (VIEW-05, VIEW-06)
-- [ ] 5.6 GREEN: `twines/src/components/vehicle-health/{VehicleDiagram2D,VehicleHealthView,useWebGLSupport}.tsx`; wire `twines/src/app/vehicles/[id]/page.tsx`
+- [x] 5.1 RED: `twines/tests/component/vehicle-health/part-list.test.tsx` — 8 items with name, text status, usage % (VIEW-02)
+- [x] 5.2 GREEN: `twines/src/components/vehicle-health/PartList.tsx` and `HealthSummary.tsx` (details, overall status, next maintenance, generic-intervals notice: VIEW-01)
+- [x] 5.3 RED: `twines/tests/component/vehicle-health/part-detail-panel.test.tsx` — shows status, %, remaining km/days, due date; "Mark as serviced" only for technicians (VIEW-08/09)
+- [x] 5.4 GREEN: `twines/src/components/vehicle-health/PartDetailPanel.tsx`
+- [x] 5.5 RED: `twines/tests/component/vehicle-health/diagram-2d.test.tsx` — 8 zones colored by status, click selects part, list/selection sync (VIEW-05, VIEW-06)
+- [x] 5.6 GREEN: `twines/src/components/vehicle-health/{VehicleDiagram2D,VehicleHealthView,useWebGLSupport}.tsx`; wire `twines/src/app/vehicles/[id]/page.tsx`
 - [ ] 5.7 RED: `twines/tests/component/vehicle-health/vehicle-3d.test.tsx` — model chosen by body type (VIEW-03), hotspot buttons have accessible labels, auto-rotate off under reduced motion and when a part is selected (VIEW-07)
 - [ ] 5.8 GREEN: `twines/src/components/vehicle-health/Vehicle3D.tsx` and `twines/src/components/vehicle-health/models/{sedan,hatchback,suv,pickup}.ts`, loaded via `next/dynamic` with `ssr: false`
 
