@@ -1,0 +1,38 @@
+schema: spec-driven
+
+context: |
+  Project: TwinES MVP (first milestone 2026-12-05, delivered with a full QA cycle).
+  Greenfield: no source code existed before change `twines-mvp`.
+  Tech stack (decided 2026-11-19): TypeScript, Next.js (App Router), Prisma + SQLite,
+  Vitest (unit), Playwright (E2E), three.js via @react-three/fiber (generic 3D models).
+  Architecture: pure domain modules (no framework imports) for health and maintenance rules,
+  framework adapters (Next.js routes/server actions, Prisma repositories) around them.
+  Testing: Strict TDD enabled at session level; the milestone requires unit and
+  automated tests plus functional, regression, security and usability results.
+  Style: generated artifacts, code, comments and UI copy in English unless the user requests otherwise.
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Keep scope deliverable before 2026-12-05
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Every scenario must be traceable to a test case ID in the test plan
+  design:
+    - Document architecture decisions with rationale
+    - Keep domain logic framework-free and deterministic (injectable clock)
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    guidelines:
+      - Follow existing code patterns
+    tdd: true
+    test_command: ""   # set during design/apply once the project is scaffolded
+  verify:
+    test_command: ""
+    build_command: ""
+    coverage_threshold: 80
+  archive:
+    - Warn before merging destructive deltas

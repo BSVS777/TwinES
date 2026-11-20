@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Next.js / build output
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Local databases
+*.db
+*.db-journal
+*.sqlite
+
+# Test artifacts
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local agent tooling
+.atl/
+.codegraph/
+
+# Local-only documents (not part of the project)
+PROYECTO QA.pdf
