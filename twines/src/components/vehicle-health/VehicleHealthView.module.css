@@ -1,0 +1,21 @@
+.view {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.columns {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.visual {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 60rem) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
