@@ -52,6 +52,16 @@ describe("signUp", () => {
     ).rejects.toThrow("An account with this email already exists");
   });
 
+  it("lets unexpected storage failures through instead of reporting them as duplicates", async () => {
+    users.create = async () => {
+      throw new Error("database unavailable");
+    };
+
+    await expect(signUp(deps, { email: "ana@example.com", password: "secret123" })).rejects.toThrow(
+      "database unavailable",
+    );
+  });
+
   it("AUTH-03 rejects a password without a digit and explains the rule", async () => {
     const errors = await validationErrors({ email: "ana@example.com", password: "abcdefg" });
 
