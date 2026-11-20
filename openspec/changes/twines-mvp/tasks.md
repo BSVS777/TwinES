@@ -123,11 +123,12 @@ Conventions for every work unit:
   - Accounts `tech@twines.test`, `owner.one@twines.test` and `owner.two@twines.test` are found by email and kept (an existing account keeps its password); each seed vehicle is found by plate and rebuilt, so a re-run duplicates nothing and undoes later edits
   - Baselines are measured back from the Clock's today (`TWINES_FIXED_TODAY` honored under the app's rules), so owner one always has an all-green, a yellow, an orange, a red and a time-overdue vehicle across the four body types, and owner two has one vehicle; `SEED_EXPECTATIONS` (by plate) is the exported source of truth for end-to-end assertions
   - Tests: `tests/unit/seed/*` (helper proven against the domain estimator for every part, status, driver and several dates; password validation) and `tests/integration/seed.test.ts` (idempotency, ownership, hashing, statuses through `getVehicleHealth`)
-- [ ] 6.5 Create `twines/tests/e2e/auth.spec.ts` — sign-up, sign-in, generic error, lockout, sign-out invalidation, anonymous redirect (AUTH-01, 07, 08, 10, 12, 13)
-- [ ] 6.6 Create `twines/tests/e2e/vehicles.spec.ts` — register, validation errors, edit, mileage rollback, delete, empty state (VEH-01..04, 08..11)
-- [ ] 6.7 Create `twines/tests/e2e/health-view.spec.ts` — summary, list, hotspot click and panel, 2D fallback with WebGL disabled (VIEW-01..06)
-- [ ] 6.8 Create `twines/tests/e2e/technician.spec.ts` — plate search, not found, mark serviced turns part green, owner sees no action (VEH-14..16, VIEW-08/09)
-- [ ] 6.9 Create `twines/tests/e2e/api-security.spec.ts` — 401 anonymous (AUTH-14), 403 owner on technician endpoints (AUTH-15), 404 cross-owner (VEH-12/13), 403 technician edit/delete (VEH-17), 403 foreign Origin, cookie flags (AUTH-09)
+- [x] 6.5 Create `twines/tests/e2e/auth.spec.ts` — sign-up, sign-in, generic error, lockout, sign-out invalidation, anonymous redirect (AUTH-01, 07, 08, 10, 12, 13)
+  - Harness: `twines/playwright.config.ts` (port 3200, `E2E_PORT` to change it; one worker; `reuseExistingServer: false`), `twines/tests/e2e/support/{prepare-database.mjs,accounts.ts,app.ts,test.ts}`. Playwright starts the web server before any global setup, so the web server command itself rebuilds `e2e.db` (delete, `prisma migrate deploy`, seed) before `npm run build && next start`; the seed passwords are random per run, generated in the config and passed through the environment only. No fixed date is needed: statuses are relative to today and `TWINES_FIXED_TODAY` is ignored in production
+- [x] 6.6 Create `twines/tests/e2e/vehicles.spec.ts` — register, validation errors, edit, mileage rollback, delete, empty state (VEH-01..04, 08..11)
+- [x] 6.7 Create `twines/tests/e2e/health-view.spec.ts` — summary, list, hotspot click and panel, 2D fallback with WebGL disabled (VIEW-01..06)
+- [x] 6.8 Create `twines/tests/e2e/technician.spec.ts` — plate search, not found, mark serviced turns part green, owner sees no action (VEH-14..16, VIEW-08/09)
+- [x] 6.9 Create `twines/tests/e2e/api-security.spec.ts` — 401 anonymous (AUTH-14), 403 owner on technician endpoints (AUTH-15), 404 cross-owner (VEH-12/13), 403 technician edit/delete (VEH-17), 403 foreign Origin, cookie flags (AUTH-09)
 - [x] 6.10 Follow-ups from the independent verification of PR 11 (PR 12a)
   - B1 real 403 for wrong-role pages (AUTH-15, VEH-17): `experimental.authInterrupts` in `twines/next.config.ts`; `forbidden()` in `src/app/technician/page.tsx` for owners and in `src/app/vehicles/new/page.tsx` and `src/app/vehicles/[id]/edit/page.tsx` for technicians, rendered by `src/app/forbidden.tsx` ("Access denied"); the role notices were removed; `/vehicles` still redirects technicians to `/technician`
   - W1 mileage rollback race: the odometer check is part of the write (`UPDATE ... WHERE currentMileageKm <= new` in `update`; conditional `updateMany` inside the interactive transaction of `recordService`); a lost race answers the same 400 `ValidationError` with `MILEAGE_ROLLBACK_MESSAGE`; an omitted reading takes the baseline mileage from the row read in that transaction (`ServiceRecord` is now `{ partId, date, currentMileageKm? }`)
@@ -138,5 +139,6 @@ Conventions for every work unit:
 
 ## Phase 7: Documentation and traceability (PR 12)
 
-- [ ] 7.1 Update root `README.md` with setup (`npm ci`, migrate, seed), scripts and test commands
-- [ ] 7.2 Create `docs/testing/traceability.md` mapping every scenario ID to its test file and test name (manual tests for VIEW-03 visual check and VIEW-07 listed explicitly)
+- [x] 7.1 Update root `README.md` with setup (`npm ci`, migrate, seed), scripts and test commands
+- [x] 7.2 Create `docs/testing/traceability.md` mapping every scenario ID to its test file and test name (manual tests for VIEW-03 visual check and VIEW-07 listed explicitly)
+  - Generated from the real test titles (all 59 scenario IDs have an automated test; 31 also have an end-to-end test); `docs/testing/manual-tests.md` holds the manual 3D checks M-1..M-6, the usability observations and the task-based sessions
