@@ -1,0 +1,45 @@
+{
+  "id": "sedan-corolla",
+  "bodyType": "sedan",
+  "source": { "kind": "parametric" },
+  "dimensions": {
+    "length": 4.63,
+    "width": 1.78,
+    "height": 1.435,
+    "wheelbase": 2.7,
+    "track": 1.53,
+    "frontOverhang": 0.93,
+    "rearOverhang": 1.0,
+    "groundClearance": 0.15,
+    "wheelRadius": 0.32,
+    "wheelWidth": 0.205
+  },
+  "profile": {
+    "noseHeight": 0.64,
+    "hoodHeight": 0.93,
+    "beltline": 0.95,
+    "deckHeight": 0.96,
+    "tailHeight": 0.8,
+    "windshieldBaseX": 0.9,
+    "roofFrontX": 0.2,
+    "roofRearX": -0.95,
+    "rearWindowBaseX": -1.5,
+    "pillarBX": -0.33,
+    "tumblehome": 0.2,
+    "cornerRadius": 0.16,
+    "roofCornerRadius": 0.12,
+    "archClearance": 0.07
+  },
+  "cargo": "trunk",
+  "placements": {
+    "engine-bay": [
+      { "position": [1.0, 0.55, 0.0], "rotation": [0, 0, 0], "scale": [1, 1, 1] }
+    ],
+    "wheel-brake": [
+      { "position": [1.385, 0.32, 0.765], "rotation": [0, 0, 0], "scale": [1, 1, 1] },
+      { "position": [1.385, 0.32, -0.765], "rotation": [0, 3.141592653589793, 0], "scale": [1, 1, 1] },
+      { "position": [-1.315, 0.32, 0.765], "rotation": [0, 0, 0], "scale": [1, 1, 1] },
+      { "position": [-1.315, 0.32, -0.765], "rotation": [0, 3.141592653589793, 0], "scale": [1, 1, 1] }
+    ]
+  }
+}

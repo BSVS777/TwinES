@@ -46,3 +46,8 @@ PROYECTO QA.pdf
 
 # Generated Prisma client
 twines/src/generated/
+
+# Blender generator: raw exports are never committed (only the optimized GLBs in public/models are)
+twines/tools/blender/out/
+__pycache__/
+*.blend1
