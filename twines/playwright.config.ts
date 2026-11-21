@@ -42,6 +42,9 @@ export default defineConfig({
     env: {
       // Dedicated SQLite file so end-to-end runs never touch development data.
       DATABASE_URL: "file:./e2e.db",
+      // The CSRF origin check compares against APP_ORIGIN when it is set. A developer's .env may
+      // point it at another port, so the run pins it to the origin the tests actually call.
+      APP_ORIGIN: BASE_URL,
       SEED_TECH_PASSWORD: techPassword,
       SEED_OWNER_PASSWORD: ownerPassword,
     },
